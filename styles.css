@@ -57,7 +57,7 @@ body {
 
 h1, h2 {
   font-family: "Fraunces", "Times New Roman", serif;
-  letter-spacing: 0.2px;
+  letter-spacing: 0;
 }
 
 a {
@@ -87,8 +87,8 @@ img {
   margin: 0 auto;
   padding: 16px 24px;
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
   align-items: center;
 }
 
@@ -97,6 +97,7 @@ img {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
   color: var(--ink);
 }
 
@@ -120,14 +121,15 @@ img {
   font-size: 12px;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0;
 }
 
 /* Navigation links */
 .nav-links {
   display: flex;
-  justify-content: center;
-  gap: 20px;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
   font-weight: 500;
   color: var(--muted);
 }
@@ -161,26 +163,28 @@ main {
    ======================================== */
 .hero {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 32px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(260px, 0.95fr);
+  gap: 36px;
   align-items: center;
 }
 
 .hero-text h1 {
-  font-size: clamp(32px, 4vw, 48px);
-  margin: 0 0 12px;
+  font-size: 48px;
+  line-height: 1.1;
+  margin: 0 0 14px;
 }
 
 .hero-lede {
   color: var(--muted);
-  margin: 0 0 20px;
+  max-width: 62ch;
+  margin: 0 0 22px;
 }
 
 /* Small uppercase label */
 .eyebrow {
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.3em;
+  letter-spacing: 0;
   color: var(--muted);
   margin-bottom: 12px;
 }
@@ -195,9 +199,14 @@ main {
 /* Button styles */
 .btn-primary,
 .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   padding: 12px 20px;
   border-radius: 999px;
   font-weight: 600;
+  line-height: 1.2;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -319,6 +328,15 @@ main {
   padding-left: 20px;
 }
 
+.policy-card p:last-child,
+.policy-card ul:last-child {
+  margin-bottom: 0;
+}
+
+.policy-card li + li {
+  margin-top: 6px;
+}
+
 .policy-card strong {
   color: var(--ink);
 }
@@ -327,19 +345,6 @@ main {
   color: var(--blue);
   font-weight: 600;
   text-decoration: underline;
-}
-
-.ads-file-block {
-  background: #1f1a18;
-  color: #f7efe8;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.ads-file-block code {
-  background: transparent;
-  padding: 0;
-  color: inherit;
 }
 
 /* ========================================
@@ -433,7 +438,7 @@ main {
 
 .page-header h1 {
   margin: 0 0 8px;
-  font-size: clamp(32px, 4vw, 48px);
+  font-size: 48px;
 }
 
 .page-lede {
@@ -471,7 +476,7 @@ main {
   font-size: 13px;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0;
 }
 
 /* Content area within documentation sections */
@@ -649,7 +654,7 @@ main {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.9);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0;
 }
 
 .gallery-card-overlay .card-size {
@@ -893,7 +898,7 @@ code {
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0;
 }
 
 .documentation-item p {
@@ -917,13 +922,19 @@ code {
    ======================================== */
 @media (max-width: 900px) {
   .header-content {
-    grid-template-columns: 1fr;
-    justify-items: start;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+
+  .brand {
+    justify-self: start;
   }
 
   .nav-links {
     justify-content: flex-start;
     flex-wrap: wrap;
+    min-width: 0;
+    width: 100%;
   }
 
   /* Gallery responsive - 4-5 columns on tablet */
@@ -938,6 +949,27 @@ code {
 @media (max-width: 600px) {
   main {
     padding: 28px 18px 60px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .hero-text h1 {
+    font-size: 34px;
+  }
+
+  .nav-links {
+    display: grid;
+    gap: 4px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .nav-links a {
+    font-size: 12px;
+    padding: 8px 4px;
+    text-align: center;
   }
 
   .hero-actions {

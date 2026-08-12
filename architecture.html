@@ -1,0 +1,1895 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="description" content="A code-traceable architecture reference for the Pho Logic student portfolio project.">
+        <meta name="author" content="CuongTModwork">
+        <link rel="canonical" href="https://cuongme.github.io/pho_logic_mvp/architecture.html">
+        <link rel="prev" href="documentation.html">
+        <link rel="next" href="board-game.html">
+      <link rel="icon" href="assets/images/app_launcher_icon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+        <title>System Architecture - Pho Logic</title>
+      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      <link rel="stylesheet" href="assets/stylesheets/extra.css">
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+  </head>
+    <body dir="ltr" data-md-color-scheme="phologic-light" data-md-color-primary="custom" data-md-color-accent="custom">
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+        <a href="#pho-logic-architecture" class="md-skip">
+          Skip to content
+        </a>
+    </div>
+    <div data-md-component="announce">
+    </div>
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="Pho Logic" class="md-header__button md-logo" aria-label="Pho Logic" data-md-component="logo">
+  <img src="assets/images/app_launcher_icon.png" alt="logo">
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Pho Logic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+              System Architecture
+          </span>
+        </div>
+      </div>
+    </div>
+        <label class="md-header__button md-icon" for="__search">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      <div class="md-header__source">
+        <a href="https://github.com/CuongMe/pho_logic_mvp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CuongMe/pho_logic_mvp
+  </div>
+</a>
+      </div>
+  </nav>
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+    <li class="md-tabs__item">
+      <a href="index.html" class="md-tabs__link">
+  Home / Privacy
+      </a>
+    </li>
+    <li class="md-tabs__item">
+      <a href="gdd.html" class="md-tabs__link">
+  Game Design
+      </a>
+    </li>
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="documentation.html" class="md-tabs__link">
+  Engineering
+        </a>
+      </li>
+    </ul>
+  </div>
+</nav>
+</header>
+    <div class="md-container" data-md-component="container">
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="Pho Logic" class="md-nav__button md-logo" aria-label="Pho Logic" data-md-component="logo">
+  <img src="assets/images/app_launcher_icon.png" alt="logo">
+    </a>
+    Pho Logic
+  </label>
+    <div class="md-nav__source">
+      <a href="https://github.com/CuongMe/pho_logic_mvp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CuongMe/pho_logic_mvp
+  </div>
+</a>
+    </div>
+  <ul class="md-nav__list" data-md-scrollfix>
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Home / Privacy
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="gdd.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Game Design
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+  <span class="md-ellipsis">
+    Engineering
+  </span>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+    Engineering
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+    <li class="md-nav__item">
+      <a href="documentation.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Technical Overview
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item md-nav__item--active">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+  <span class="md-ellipsis">
+    System Architecture
+  </span>
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      <a href="architecture.html" class="md-nav__link md-nav__link--active">
+  <span class="md-ellipsis">
+    System Architecture
+  </span>
+      </a>
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+        <li class="md-nav__item">
+  <a href="#scope-and-sources-of-truth" class="md-nav__link">
+    <span class="md-ellipsis">
+        Scope and Sources of Truth
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#system-context" class="md-nav__link">
+    <span class="md-ellipsis">
+        System Context
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="System Context">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#responsibility-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+        Responsibility Boundaries
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#repository-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Repository Organization
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#startup-and-navigation" class="md-nav__link">
+    <span class="md-ellipsis">
+        Startup and Navigation
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Startup and Navigation">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#bootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+        Bootstrap
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#route-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+        Route Surface
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#gameplay-session-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+        Gameplay Session Construction
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#turn-transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+        Turn Transaction
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#domain-model-and-invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+        Domain Model and Invariants
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Domain Model and Invariants">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#coordinates-and-cells" class="md-nav__link">
+    <span class="md-ellipsis">
+        Coordinates and Cells
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#board-state-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+        Board State Conversion
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#match-and-cascade-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+        Match and Cascade Engine
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Match and Cascade Engine">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#gravity-and-refill" class="md-nav__link">
+    <span class="md-ellipsis">
+        Gravity and Refill
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#clear-accounting" class="md-nav__link">
+    <span class="md-ellipsis">
+        Clear Accounting
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#special-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+        Special Resolution
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Special Resolution">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#creation" class="md-nav__link">
+    <span class="md-ellipsis">
+        Creation
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#single-special-activation" class="md-nav__link">
+    <span class="md-ellipsis">
+        Single-Special Activation
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#special-combinations" class="md-nav__link">
+    <span class="md-ellipsis">
+        Special Combinations
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#vfx-timing" class="md-nav__link">
+    <span class="md-ellipsis">
+        VFX Timing
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#rendering-and-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Rendering and Synchronization
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Rendering and Synchronization">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#registries" class="md-nav__link">
+    <span class="md-ellipsis">
+        Registries
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#why-stable-instance-ids-matter" class="md-nav__link">
+    <span class="md-ellipsis">
+        Why Stable Instance IDs Matter
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#stage-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+        Stage Pipeline
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Stage Pipeline">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#parse-resolve-build" class="md-nav__link">
+    <span class="md-ellipsis">
+        Parse, Resolve, Build
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+        Validation
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#responsive-ui-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+        Responsive UI Architecture
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#state-and-persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+        State and Persistence
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="State and Persistence">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#game-state" class="md-nav__link">
+    <span class="md-ellipsis">
+        Game State
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+        Inventory
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#stage-progress-and-preferences" class="md-nav__link">
+    <span class="md-ellipsis">
+        Stage Progress and Preferences
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#audio" class="md-nav__link">
+    <span class="md-ellipsis">
+        Audio
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#dependency-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+        Dependency Surface
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#design-decisions-and-trade-offs" class="md-nav__link">
+    <span class="md-ellipsis">
+        Design Decisions and Trade-offs
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Design Decisions and Trade-offs">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#flutter-plus-flame" class="md-nav__link">
+    <span class="md-ellipsis">
+        Flutter plus Flame
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#json-authored-layouts-and-stages" class="md-nav__link">
+    <span class="md-ellipsis">
+        JSON-authored Layouts and Stages
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#changenotifier-and-singletons" class="md-nav__link">
+    <span class="md-ellipsis">
+        ChangeNotifier and Singletons
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#known-constraints-and-risks" class="md-nav__link">
+    <span class="md-ellipsis">
+        Known Constraints and Risks
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#testing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+        Testing Strategy
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Testing Strategy">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#current" class="md-nav__link">
+    <span class="md-ellipsis">
+        Current
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#recommended-test-layers" class="md-nav__link">
+    <span class="md-ellipsis">
+        Recommended Test Layers
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#extension-playbooks" class="md-nav__link">
+    <span class="md-ellipsis">
+        Extension Playbooks
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Extension Playbooks">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#add-a-stage-within-the-current-campaign" class="md-nav__link">
+    <span class="md-ellipsis">
+        Add a Stage Within the Current Campaign
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#add-a-new-regular-tile" class="md-nav__link">
+    <span class="md-ellipsis">
+        Add a New Regular Tile
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#add-a-new-special-tile" class="md-nav__link">
+    <span class="md-ellipsis">
+        Add a New Special Tile
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#code-index" class="md-nav__link">
+    <span class="md-ellipsis">
+        Code Index
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#portfolio-context" class="md-nav__link">
+    <span class="md-ellipsis">
+        Portfolio Context
+    </span>
+  </a>
+</li>
+    </ul>
+</nav>
+    </li>
+    <li class="md-nav__item">
+      <a href="board-game.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Board Engine Guide
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="board-game-rendering.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    BoardGame Rendering
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="board-controller.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    BoardController Rules
+  </span>
+      </a>
+    </li>
+          </ul>
+        </nav>
+    </li>
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+        <li class="md-nav__item">
+  <a href="#scope-and-sources-of-truth" class="md-nav__link">
+    <span class="md-ellipsis">
+        Scope and Sources of Truth
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#system-context" class="md-nav__link">
+    <span class="md-ellipsis">
+        System Context
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="System Context">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#responsibility-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+        Responsibility Boundaries
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#repository-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Repository Organization
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#startup-and-navigation" class="md-nav__link">
+    <span class="md-ellipsis">
+        Startup and Navigation
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Startup and Navigation">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#bootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+        Bootstrap
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#route-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+        Route Surface
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#gameplay-session-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+        Gameplay Session Construction
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#turn-transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+        Turn Transaction
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#domain-model-and-invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+        Domain Model and Invariants
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Domain Model and Invariants">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#coordinates-and-cells" class="md-nav__link">
+    <span class="md-ellipsis">
+        Coordinates and Cells
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#board-state-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+        Board State Conversion
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#match-and-cascade-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+        Match and Cascade Engine
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Match and Cascade Engine">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#gravity-and-refill" class="md-nav__link">
+    <span class="md-ellipsis">
+        Gravity and Refill
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#clear-accounting" class="md-nav__link">
+    <span class="md-ellipsis">
+        Clear Accounting
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#special-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+        Special Resolution
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Special Resolution">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#creation" class="md-nav__link">
+    <span class="md-ellipsis">
+        Creation
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#single-special-activation" class="md-nav__link">
+    <span class="md-ellipsis">
+        Single-Special Activation
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#special-combinations" class="md-nav__link">
+    <span class="md-ellipsis">
+        Special Combinations
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#vfx-timing" class="md-nav__link">
+    <span class="md-ellipsis">
+        VFX Timing
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#rendering-and-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Rendering and Synchronization
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Rendering and Synchronization">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#registries" class="md-nav__link">
+    <span class="md-ellipsis">
+        Registries
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#why-stable-instance-ids-matter" class="md-nav__link">
+    <span class="md-ellipsis">
+        Why Stable Instance IDs Matter
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#stage-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+        Stage Pipeline
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Stage Pipeline">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#parse-resolve-build" class="md-nav__link">
+    <span class="md-ellipsis">
+        Parse, Resolve, Build
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+        Validation
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#responsive-ui-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+        Responsive UI Architecture
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#state-and-persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+        State and Persistence
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="State and Persistence">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#game-state" class="md-nav__link">
+    <span class="md-ellipsis">
+        Game State
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+        Inventory
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#stage-progress-and-preferences" class="md-nav__link">
+    <span class="md-ellipsis">
+        Stage Progress and Preferences
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#audio" class="md-nav__link">
+    <span class="md-ellipsis">
+        Audio
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#dependency-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+        Dependency Surface
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#design-decisions-and-trade-offs" class="md-nav__link">
+    <span class="md-ellipsis">
+        Design Decisions and Trade-offs
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Design Decisions and Trade-offs">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#flutter-plus-flame" class="md-nav__link">
+    <span class="md-ellipsis">
+        Flutter plus Flame
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#json-authored-layouts-and-stages" class="md-nav__link">
+    <span class="md-ellipsis">
+        JSON-authored Layouts and Stages
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#changenotifier-and-singletons" class="md-nav__link">
+    <span class="md-ellipsis">
+        ChangeNotifier and Singletons
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#known-constraints-and-risks" class="md-nav__link">
+    <span class="md-ellipsis">
+        Known Constraints and Risks
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#testing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+        Testing Strategy
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Testing Strategy">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#current" class="md-nav__link">
+    <span class="md-ellipsis">
+        Current
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#recommended-test-layers" class="md-nav__link">
+    <span class="md-ellipsis">
+        Recommended Test Layers
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#extension-playbooks" class="md-nav__link">
+    <span class="md-ellipsis">
+        Extension Playbooks
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Extension Playbooks">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#add-a-stage-within-the-current-campaign" class="md-nav__link">
+    <span class="md-ellipsis">
+        Add a Stage Within the Current Campaign
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#add-a-new-regular-tile" class="md-nav__link">
+    <span class="md-ellipsis">
+        Add a New Regular Tile
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#add-a-new-special-tile" class="md-nav__link">
+    <span class="md-ellipsis">
+        Add a New Special Tile
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#code-index" class="md-nav__link">
+    <span class="md-ellipsis">
+        Code Index
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#portfolio-context" class="md-nav__link">
+    <span class="md-ellipsis">
+        Portfolio Context
+    </span>
+  </a>
+</li>
+    </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            <div class="md-content" data-md-component="content">
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+    <li class="md-path__item">
+      <a href="index.html" class="md-path__link">
+  <span class="md-ellipsis">
+    Home / Privacy
+  </span>
+      </a>
+    </li>
+      <li class="md-path__item">
+        <a href="documentation.html" class="md-path__link">
+  <span class="md-ellipsis">
+    Engineering
+  </span>
+        </a>
+      </li>
+    </ol>
+  </nav>
+              <article class="md-content__inner md-typeset">
+<h1 id="pho-logic-architecture">Pho Logic Architecture<a class="headerlink" href="#pho-logic-architecture" title="Permanent link">&para;</a></h1>
+<div class="admonition important">
+<p class="admonition-title">Student portfolio scope</p>
+<p>Pho Logic is a student portfolio project and learning-focused MVP. This
+document describes the code currently checked into the repository. It does
+not claim commercial readiness, production scale, or systems that are not
+present in source.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Document field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Application version</td>
+<td><code>1.0.0+6</code> from <code>pubspec.yaml</code></td>
+</tr>
+<tr>
+<td>Campaign content</td>
+<td>25 stage files, <code>stage_001.json</code> through <code>stage_025.json</code></td>
+</tr>
+<tr>
+<td>Primary language</td>
+<td>Dart, SDK constraint <code>&gt;=3.0.0 &lt;4.0.0</code></td>
+</tr>
+<tr>
+<td>UI framework</td>
+<td>Flutter</td>
+</tr>
+<tr>
+<td>Board engine</td>
+<td>Flame <code>^1.22.1</code></td>
+</tr>
+<tr>
+<td>Persistence</td>
+<td><code>shared_preferences</code></td>
+</tr>
+<tr>
+<td>Last code review for this document</td>
+<td>2026-08-12</td>
+</tr>
+</tbody>
+</table>
+<h2 id="scope-and-sources-of-truth">Scope and Sources of Truth<a class="headerlink" href="#scope-and-sources-of-truth" title="Permanent link">&para;</a></h2>
+<p>The architecture is derived from:</p>
+<ol>
+<li>Runtime code under <code>lib/</code>.</li>
+<li>Package and asset declarations in <code>pubspec.yaml</code>.</li>
+<li>UI definitions under <code>assets/json_design/</code>.</li>
+<li>Stage data under <code>assets/stages/</code>.</li>
+</ol>
+<p>The <a href="gdd.html">Game Design Document</a> is the source for player-facing rules and content intent. The focused <a href="board-game.html">board guide</a>, <a href="board-game-rendering.html">BoardGame reference</a>, and <a href="board-controller.html">BoardController reference</a> expand on the core board modules.</p>
+<p>Statements labelled <strong>Current</strong> describe implemented behavior. Statements labelled <strong>Recommended</strong> are engineering follow-up work and are not implemented features.</p>
+<h2 id="system-context">System Context<a class="headerlink" href="#system-context" title="Permanent link">&para;</a></h2>
+<p>Pho Logic uses Flutter as the application shell and Flame as an embedded board renderer. The logical board remains a Dart model. Flame components are projections of that model, not the source of game truth.</p>
+<pre class="mermaid"><code>flowchart TB
+    Player[Player input] --&gt; Flutter[Flutter screens and HUD]
+    Flutter --&gt; Viewport[BoardViewport]
+    Viewport --&gt; Flame[BoardGame / Flame scene]
+    Flame --&gt; Controller[BoardController]
+    Controller --&gt; Grid[GridModel]
+    Controller --&gt; Match[Match and special resolvers]
+    Controller --&gt; Audio[SfxManager]
+    Flame --&gt; State[GameStateModel]
+    State --&gt; Flutter
+    Flutter --&gt; Repositories[SharedPreferences repositories]
+    StageJSON[Stage JSON] --&gt; StageLoader[StageLoader and StageBuilder]
+    StageLoader --&gt; Grid
+    LayoutJSON[Layout JSON] --&gt; Flutter</code></pre>
+<h3 id="responsibility-boundaries">Responsibility Boundaries<a class="headerlink" href="#responsibility-boundaries" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Boundary</th>
+<th>Owns</th>
+<th>Does not own</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Flutter screens</td>
+<td>Navigation, layout scaling, HUD, dialogs, inventory drag/drop, and screen lifecycle</td>
+<td>Match detection or board mutation</td>
+</tr>
+<tr>
+<td><code>BoardViewport</code></td>
+<td>Embedding <code>GameWidget</code>, constructing a board session, coordinate conversion for booster drops</td>
+<td>Match rules</td>
+</tr>
+<tr>
+<td><code>BoardGame</code></td>
+<td>Flame components, input lock, model-to-component synchronization, particles, and VFX dispatch</td>
+<td>Authoritative tile placement rules</td>
+</tr>
+<tr>
+<td><code>BoardController</code></td>
+<td>Swaps, matches, special resolution, clear ordering, gravity, refill, solvability, and shuffle</td>
+<td>Flutter navigation or HUD composition</td>
+</tr>
+<tr>
+<td><code>GridModel</code></td>
+<td>Authoritative cells, tile type IDs, stable instance IDs, beds, and blockers</td>
+<td>Animation</td>
+</tr>
+<tr>
+<td>State models</td>
+<td>Moves, objectives, blockers, inventory counts, and change notifications</td>
+<td>Board rendering</td>
+</tr>
+<tr>
+<td>Repositories/managers</td>
+<td>Local persistence and audio playback</td>
+<td>Gameplay policy</td>
+</tr>
+</tbody>
+</table>
+<h2 id="repository-organization">Repository Organization<a class="headerlink" href="#repository-organization" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>lib/
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|-- main.dart
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>`-- src/
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    |-- app/                 Application root and route table
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    |-- audio/               BGM and pooled SFX
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    |-- game/
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    |   |-- board/           Rule engine, Flame board, components, and special resolvers
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    |   |-- inventory/       Booster state and persistence
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    |   |-- model/           Coord, Cell, GridModel, Match, and BoardState
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    |   |-- progress/        Latest per-stage result
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    |   |-- stages/          Stage schema, load/build pipeline, and validator
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    |   |-- utils/           Weighted picker and game logging
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    |   `-- vfx/             Special and blocker effects
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    |-- screens/             Menu, world map, gameplay, help, settings, and dialogs
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    |-- utils/               App logging, JSON helpers, animations, and boost cooldown
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    `-- widgets/             Reusable Flutter widgets
+</span></code></pre></div>
+<h2 id="startup-and-navigation">Startup and Navigation<a class="headerlink" href="#startup-and-navigation" title="Permanent link">&para;</a></h2>
+<h3 id="bootstrap">Bootstrap<a class="headerlink" href="#bootstrap" title="Permanent link">&para;</a></h3>
+<p><code>main.dart</code> performs the following sequence:</p>
+<ol>
+<li>Initializes Flutter bindings.</li>
+<li>Locks orientation on native mobile targets.</li>
+<li>Initializes <code>SfxManager</code> and <code>BgmManager</code>.</li>
+<li>Runs <code>PhoLogicApp</code>.</li>
+</ol>
+<p><code>PhoLogicApp</code> creates the <code>MaterialApp</code>, supplies the global <code>navigatorKey</code>, and listens for pointer input so web audio can retry after a browser autoplay rejection.</p>
+<p>No AdMob SDK is initialized by the current source, and <code>pubspec.yaml</code> does not declare <code>google_mobile_ads</code>. The root <code>app-ads.txt</code> belongs to a demo publishing exercise for this student project.</p>
+<h3 id="route-surface">Route Surface<a class="headerlink" href="#route-surface" title="Permanent link">&para;</a></h3>
+<p><code>Routes.getRoutes()</code> registers:</p>
+<ul>
+<li><code>/menu</code></li>
+<li><code>/world/1</code></li>
+<li><code>/gameplay/1</code> through <code>/gameplay/25</code>, generated in a loop</li>
+</ul>
+<pre class="mermaid"><code>flowchart LR
+    Menu[MenuScreen] --&gt; World[WorldScreen1]
+    Menu --&gt; Help[HelpScreen dialog]
+    Menu --&gt; Settings[SettingsScreen dialog]
+    World --&gt; Game[GameplayScreen1]
+    Game --&gt; Pause[PauseScreen]
+    Game --&gt; Win[WinModal]
+    Game --&gt; Lose[LoseModal]
+    Game --&gt; NoMoves[NoMovesModal]
+    Win --&gt; Game
+    Win --&gt; World
+    Lose --&gt; Game
+    Pause --&gt; Menu</code></pre>
+<p>The world map displays five lanterns per page across five pages, covering stages 1-25. Stage progress records the latest terminal result, <code>cleared</code> or <code>lose</code>, in local preferences.</p>
+<h2 id="gameplay-session-construction">Gameplay Session Construction<a class="headerlink" href="#gameplay-session-construction" title="Permanent link">&para;</a></h2>
+<p><code>GameplayScreen1</code> loads two independent resources:</p>
+<ul>
+<li><code>assets/json_design/gameplay_1.json</code> for the screen composition and board rectangle.</li>
+<li><code>assets/stages/stage_XXX.json</code> for stage rules and content.</li>
+</ul>
+<p>The screen creates <code>InventoryModel</code> and <code>GameStateModel</code>, then supplies them to <code>BoardViewport</code>. The viewport builds a <code>GridModel</code> through <code>StageBuilder</code>, constructs <code>BoardGame</code>, and connects no-move and game-state callbacks.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Screen as GameplayScreen1
+    participant Loader as StageLoader
+    participant Viewport as BoardViewport
+    participant Builder as StageBuilder
+    participant Game as BoardGame
+    participant Controller as BoardController
+
+    Screen-&gt;&gt;Loader: load stage_XXX.json
+    Loader--&gt;&gt;Screen: StageData
+    Screen-&gt;&gt;Viewport: StageData + models + scaled rect
+    Viewport-&gt;&gt;Builder: buildGridModel(StageData)
+    Builder--&gt;&gt;Viewport: GridModel
+    Viewport-&gt;&gt;Game: construct(GridModel, StageData)
+    Game-&gt;&gt;Controller: construct and attach callbacks
+    Game-&gt;&gt;Controller: initializeInstanceIds()
+    Game-&gt;&gt;Controller: stabilizeInitialBoard()</code></pre>
+<p>The board is rebuilt when the viewport dimensions, row/column count, or <code>StageData</code> identity changes.</p>
+<h2 id="turn-transaction">Turn Transaction<a class="headerlink" href="#turn-transaction" title="Permanent link">&para;</a></h2>
+<p>The input path is tap based: the first tile is selected and the next adjacent tile becomes the swap candidate. <code>BoardGame._isBusy</code> prevents concurrent transactions.</p>
+<pre class="mermaid"><code>flowchart TD
+    A[Two adjacent tiles selected] --&gt; B{canSwap}
+    B -- no --&gt; Z[Keep or change selection]
+    B -- yes --&gt; C[Swap logical cells]
+    C --&gt; D[Sync movement to Flame components]
+    D --&gt; E{Line match, 2x2, or special involved?}
+    E -- no --&gt; F[Swap back and sync]
+    E -- yes --&gt; G[Resolve special combo or normal clears]
+    G --&gt; H[Emit clear events and VFX]
+    H --&gt; I[Apply gravity]
+    I --&gt; J[Refill regular tiles]
+    J --&gt; K{More matches or 2x2 blocks?}
+    K -- yes --&gt; G
+    K -- no --&gt; L[Ensure solvable or shuffle]
+    L --&gt; M[Decrement one move]</code></pre>
+<p>A move is consumed only when <code>BoardController.attemptSwap()</code> returns success. The decrement occurs in <code>BoardGame</code> after the complete asynchronous resolution returns.</p>
+<h2 id="domain-model-and-invariants">Domain Model and Invariants<a class="headerlink" href="#domain-model-and-invariants" title="Permanent link">&para;</a></h2>
+<h3 id="coordinates-and-cells">Coordinates and Cells<a class="headerlink" href="#coordinates-and-cells" title="Permanent link">&para;</a></h3>
+<p><code>Coord</code> is an immutable logical <code>row</code> and <code>col</code> pair. It is used as a map/set key throughout board logic and rendering.</p>
+<p>Each <code>Cell</code> can contain:</p>
+<ul>
+<li><code>tileTypeId</code>: regular tile <code>1..6</code>, special <code>101..105</code>, or <code>null</code>.</li>
+<li><code>tileInstanceId</code>: stable identity for the tile object during movement.</li>
+<li><code>bedId</code>: <code>-1</code> for a void, otherwise a playable bed.</li>
+<li>blocker state, currently <code>BlockerType.scooterTileBlocker</code>.</li>
+</ul>
+<p>Important invariants:</p>
+<ol>
+<li><code>GridModel</code> is authoritative. Flame components must converge to it after each sync.</li>
+<li>A void cell has <code>bedId == -1</code> and must not participate in swaps, matches, gravity, or effects.</li>
+<li>A blocker cell is not swappable and acts as a gravity barrier.</li>
+<li>Regular spawn/refill IDs come from stage tile definitions; specials are not refilled randomly.</li>
+<li>A tile keeps its <code>tileInstanceId</code> while moving so animation lookup remains stable.</li>
+</ol>
+<h3 id="board-state-conversion">Board State Conversion<a class="headerlink" href="#board-state-conversion" title="Permanent link">&para;</a></h3>
+<p><code>StageBuilder</code> converts stage matrices into a <code>BoardState</code>, and <code>GridModel.fromBoardState()</code> creates the cell matrix. The tile-map sentinels are:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;"><code>0</code></td>
+<td>Weighted regular-tile spawn</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>-1</code></td>
+<td>No tile / void</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>-2</code></td>
+<td>Scooter blocker occupying the cell without a tile</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>&gt;= 1</code></td>
+<td>Fixed tile type ID</td>
+</tr>
+</tbody>
+</table>
+<p>At runtime, <code>bedMap</code> determines whether a cell is playable. The <code>grid.shape.mask</code> entries in stage JSON are descriptive metadata in the current implementation; board construction does not consume the mask.</p>
+<h2 id="match-and-cascade-engine">Match and Cascade Engine<a class="headerlink" href="#match-and-cascade-engine" title="Permanent link">&para;</a></h2>
+<p><code>BoardController.detectMatches()</code> scans horizontal and vertical runs. It excludes void cells, blocker cells, missing tiles, and special IDs <code>101..105</code>.</p>
+<p>A swap is valid when at least one of these conditions is true after simulation:</p>
+<ul>
+<li>A horizontal or vertical line match exists.</li>
+<li>A same-type regular 2x2 block exists around the swap.</li>
+<li>Either swapped tile is a special.</li>
+</ul>
+<p><code>runCascade()</code> repeatedly:</p>
+<ol>
+<li>Detects line matches.</li>
+<li>If no line match exists, scans for all 2x2 regular blocks.</li>
+<li>Resolves clears and special creation.</li>
+<li>Applies gravity.</li>
+<li>Refills empty playable cells.</li>
+<li>Synchronizes rendering.</li>
+<li>Checks solvability.</li>
+</ol>
+<p>The loop is capped at 10 passes. On a stable board, <code>ensureSolvableOrShuffle()</code> shuffles only when no special tile exists and no valid move can be found.</p>
+<h3 id="gravity-and-refill">Gravity and Refill<a class="headerlink" href="#gravity-and-refill" title="Permanent link">&para;</a></h3>
+<p>Gravity processes each column while respecting voids and blockers. A blocker divides a column into independent vertical segments; tiles do not move through it. Refill fills empty playable cells with weighted regular IDs from the stage definition.</p>
+<p>Initial board handling has two defenses against accidental matches:</p>
+<ul>
+<li><code>StageBuilder</code> can avoid creating a horizontal/vertical run while selecting unresolved weighted cells when <code>allowInitialMatches</code> is false.</li>
+<li><code>BoardController.stabilizeInitialBoard()</code> rerolls detected initial matches.</li>
+</ul>
+<p>The current load path normally resolves <code>0</code> cells in <code>StageLoader</code> before <code>StageBuilder</code>, so responsibility for weighted initialization is duplicated. This is tracked as technical debt below.</p>
+<h3 id="clear-accounting">Clear Accounting<a class="headerlink" href="#clear-accounting" title="Permanent link">&para;</a></h3>
+<p><code>BoardController</code> captures tile types before mutating cells and sends a <code>Map&lt;Coord, int&gt;</code> through <code>setOnCellsClearedWithTypes</code>. <code>BoardGame</code> uses the event for particles and forwards it to <code>GameStateModel.processClearedTiles()</code>.</p>
+<p>Only regular victim IDs are forwarded for collection progress. Special IDs are filtered out. Progress is clamped to each objective target.</p>
+<p>Scooter blockers are cleared by adjacency to regular match clears. Special-clear paths call the clear emitter with <code>isRegularClear: false</code>, so special effects do not currently damage adjacent scooters.</p>
+<h2 id="special-resolution">Special Resolution<a class="headerlink" href="#special-resolution" title="Permanent link">&para;</a></h2>
+<h3 id="creation">Creation<a class="headerlink" href="#creation" title="Permanent link">&para;</a></h3>
+<p><code>SpecialTileSpawner</code> gathers every candidate, sorts by priority, and greedily accepts non-overlapping patterns.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Priority</th>
+<th>Pattern</th>
+<th style="text-align: right;">Spawned ID</th>
+<th>Spawned special</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">5</td>
+<td>Exactly five regular tiles in a straight line</td>
+<td style="text-align: right;"><code>103</code></td>
+<td>Sticky Rice Bomb</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td>Intersecting horizontal and vertical runs with a union of 5 or 6 cells</td>
+<td style="text-align: right;"><code>104</code></td>
+<td>Firecracker</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td>Same-type regular 2x2 containing a swapped coordinate</td>
+<td style="text-align: right;"><code>105</code></td>
+<td>Dragon Fly</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td>Exactly four regular tiles in a horizontal line</td>
+<td style="text-align: right;"><code>101</code></td>
+<td>Horizontal Party Popper</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td>Exactly four regular tiles in a vertical line</td>
+<td style="text-align: right;"><code>102</code></td>
+<td>Vertical Party Popper</td>
+</tr>
+</tbody>
+</table>
+<p>For a straight line, spawn placement prefers <code>swapB</code>, then <code>swapA</code>, then the center. T/L placement prefers <code>swapB</code>, then <code>swapA</code>, then the intersection. A 2x2 uses <code>swapB</code>, then <code>swapA</code>, then the top-left coordinate.</p>
+<p>Spawn coordinates are removed from the clear set before mutation, preserving the newly created special.</p>
+<h3 id="single-special-activation">Single-Special Activation<a class="headerlink" href="#single-special-activation" title="Permanent link">&para;</a></h3>
+<p><code>SpecialActivationResolver</code> activates a special involved in the swap. If both swapped cells are special in the normal activation path, the chosen/first-selected coordinate wins; actual special-to-special combinations are routed to <code>SpecialComboResolver</code>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">ID</th>
+<th>Affected cells</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;"><code>101</code></td>
+<td>Every playable cell in the special's row</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>102</code></td>
+<td>Every playable cell in the special's column</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>103</code></td>
+<td>Every playable regular tile whose type matches the regular tile swapped with it, plus itself</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>104</code></td>
+<td>Playable cells in the centered 3x3 neighborhood</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>105</code></td>
+<td>The swap partner, itself, and one deterministic additional matching regular tile; falls back to the first playable regular tile</td>
+</tr>
+</tbody>
+</table>
+<p>A special encountered inside another special's affected set is cleared without triggering another VFX activation. This is an intentional overlap-control rule in the current implementation, not a general chain-reaction system.</p>
+<h3 id="special-combinations">Special Combinations<a class="headerlink" href="#special-combinations" title="Permanent link">&para;</a></h3>
+<p><code>SpecialComboResolver</code> produces ordered <code>ComboStep</code> records. The controller executes each step and coordinates VFX timing.</p>
+<table>
+<thead>
+<tr>
+<th>Pair</th>
+<th>Implemented sequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>101 + 101</code></td>
+<td>Clear the two horizontal rows</td>
+</tr>
+<tr>
+<td><code>102 + 102</code></td>
+<td>Clear the two vertical columns</td>
+</tr>
+<tr>
+<td><code>101 + 102</code></td>
+<td>Clear one row and one column; order depends on swap orientation</td>
+</tr>
+<tr>
+<td><code>104 + 104</code></td>
+<td>One 3x3 clear centered on the activated coordinate</td>
+</tr>
+<tr>
+<td><code>103 + 103</code></td>
+<td>Clear all regular tiles</td>
+</tr>
+<tr>
+<td><code>105 + 105</code></td>
+<td>Up to two Dragon Fly pre-hit targets, depending on available regular tiles</td>
+</tr>
+<tr>
+<td><code>104 + 101/102</code></td>
+<td>Firecracker 3x3 step only</td>
+</tr>
+<tr>
+<td><code>103 + 101/102/104</code></td>
+<td>Clear all of a selected regular type, then run the other special's row, column, or 3x3 step</td>
+</tr>
+<tr>
+<td><code>105 + 101/102/104</code></td>
+<td>Dragon Fly pre-hit, then run the other special's row, column, or 3x3 step</td>
+</tr>
+<tr>
+<td><code>105 + 103</code></td>
+<td>Dragon Fly pre-hit, then clear the pre-hit regular tile type when available</td>
+</tr>
+</tbody>
+</table>
+<p>Random selection is injected through <code>Random</code> in the combo resolver, while Dragon Fly's normal same-type target search is deterministic by row and column order.</p>
+<h3 id="vfx-timing">VFX Timing<a class="headerlink" href="#vfx-timing" title="Permanent link">&para;</a></h3>
+<p><code>SpecialVfxDispatcher</code> delegates to:</p>
+<ul>
+<li><code>PartyPopperVfx</code></li>
+<li><code>FirecrackerVfx</code></li>
+<li><code>StickyRiceVfx</code></li>
+<li><code>StickyRiceDuoVfx</code></li>
+<li><code>DragonFlyVfx</code></li>
+</ul>
+<p>Party Popper and Firecracker effects own exact impact timing and call <code>BoardGame.clearTilesAtCoords()</code>. Sticky Rice and Dragon Fly communicate target metadata, animate first, and then allow the controller's clear path to complete. Suppression sets avoid duplicate particle bursts where a VFX already emits them.</p>
+<h2 id="rendering-and-synchronization">Rendering and Synchronization<a class="headerlink" href="#rendering-and-synchronization" title="Permanent link">&para;</a></h2>
+<p><code>BoardGame</code> extends <code>FlameGame</code> with <code>TapCallbacks</code>. It uses a fixed-resolution camera sized to the Flutter viewport. Tile size is the smaller of viewport width per column and viewport height per row, then the complete grid is centered.</p>
+<h3 id="registries">Registries<a class="headerlink" href="#registries" title="Permanent link">&para;</a></h3>
+<p>The rendering layer maintains:</p>
+<table>
+<thead>
+<tr>
+<th>Registry</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tilesByInstanceId</code></td>
+<td>Stable tile identity to <code>TileComponent</code></td>
+</tr>
+<tr>
+<td><code>instanceAtCoord</code></td>
+<td>Logical coordinate to current instance ID</td>
+</tr>
+<tr>
+<td><code>coordByInstanceId</code></td>
+<td>Instance ID to logical coordinate</td>
+</tr>
+<tr>
+<td><code>bedComponents</code></td>
+<td>Static bed component by coordinate</td>
+</tr>
+<tr>
+<td><code>blockerComponents</code></td>
+<td>Blocker component by coordinate</td>
+</tr>
+</tbody>
+</table>
+<p><code>syncFromModel()</code> snapshots the model, constructs replacement coordinate maps, animates components whose instance IDs moved, updates changed sprites, creates missing components, removes orphaned components, and then swaps the coordinate maps. The maps are replaced as a unit so readers do not observe a half-updated mapping.</p>
+<p><code>validateBoardSync()</code> is a repair pass. It recreates missing/mismatched components and removes components that no longer correspond to model instances.</p>
+<h3 id="why-stable-instance-ids-matter">Why Stable Instance IDs Matter<a class="headerlink" href="#why-stable-instance-ids-matter" title="Permanent link">&para;</a></h3>
+<p>Coordinates describe locations, not tile identity. During a swap or gravity pass, multiple tiles change coordinates at once. Looking up components only by coordinate can animate the wrong sprite after the logical mutation. <code>tileInstanceId</code> lets the renderer ask, "Where did this tile move?" and animate that existing component to the new coordinate.</p>
+<p>When adding a board mutation:</p>
+<ol>
+<li>Preserve the moving tile's existing instance ID.</li>
+<li>Assign a new instance ID only to a newly spawned tile.</li>
+<li>Mutate <code>GridModel</code> before requesting a render sync.</li>
+<li>Let <code>syncFromModel()</code> update coordinate registries.</li>
+<li>Do not modify Flame registry maps from rule-engine code.</li>
+</ol>
+<h2 id="stage-pipeline">Stage Pipeline<a class="headerlink" href="#stage-pipeline" title="Permanent link">&para;</a></h2>
+<h3 id="parse-resolve-build">Parse, Resolve, Build<a class="headerlink" href="#parse-resolve-build" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>flowchart LR
+    JSON[stage_XXX.json] --&gt; Parse[StageData.fromJson]
+    Parse --&gt; Resolve[StageLoader resolves 0 cells]
+    Resolve --&gt; Build[StageBuilder.buildBoardState]
+    Build --&gt; Model[GridModel.fromBoardState]</code></pre>
+<p><code>StageData</code> parses rows, columns, regular tile definitions, bed types, blocker definitions, tile and bed matrices, move count, objectives, and <code>allowInitialMatches</code>.</p>
+<p><code>StageLoader.loadFromAsset()</code>:</p>
+<ol>
+<li>Reads and decodes the asset.</li>
+<li>Creates <code>StageData</code>.</li>
+<li>Builds a weighted picker from regular tile weights.</li>
+<li>Normalizes void beds to tile value <code>-1</code>.</li>
+<li>Mutates each <code>0</code> tile entry into a weighted regular ID.</li>
+</ol>
+<p><code>StageBuilder</code> then converts the data into matrices. It still supports unresolved <code>0</code> entries and avoids simple initial runs when doing so. It converts <code>-2</code> to an empty tile cell plus blocker marker.</p>
+<h3 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h3>
+<p><code>StageValidator.validate()</code> checks:</p>
+<ul>
+<li>Positive dimensions.</li>
+<li>Tile and bed matrix dimensions.</li>
+<li>Tile definitions for weighted cells.</li>
+<li>References to known fixed tile IDs.</li>
+<li>Positive regular tile weights.</li>
+<li>References to known positive bed IDs.</li>
+</ul>
+<p><strong>Current:</strong> the gameplay load path does not call <code>StageValidator</code>. Invalid content can therefore fail later during build or rendering.</p>
+<p><strong>Recommended:</strong> validate immediately after parsing, fail with the stage path and aggregated validation messages, and add a test that loads every <code>assets/stages/stage_*.json</code> file.</p>
+<h2 id="responsive-ui-architecture">Responsive UI Architecture<a class="headerlink" href="#responsive-ui-architecture" title="Permanent link">&para;</a></h2>
+<p>Menu, world, and gameplay layouts use a 1080x1920 design space from JSON. Each screen computes:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>scale = min(usableWidth / designWidth, usableHeight / designHeight)
+</span></code></pre></div>
+<p>The scaled design is centered inside safe-area bounds. On web, scale is capped at <code>1.0</code>. Elements use design coordinates and size metadata; gameplay additionally converts <code>gridRect</code> into the Flutter pixel rectangle used by <code>BoardViewport</code>.</p>
+<p>This is contain scaling. It preserves composition and aspect ratio but can leave unused space on screens whose aspect ratio differs significantly from 9:16.</p>
+<h2 id="state-and-persistence">State and Persistence<a class="headerlink" href="#state-and-persistence" title="Permanent link">&para;</a></h2>
+<h3 id="game-state">Game State<a class="headerlink" href="#game-state" title="Permanent link">&para;</a></h3>
+<p><code>GameStateModel</code> is session local and extends <code>ChangeNotifier</code>. It owns:</p>
+<ul>
+<li>Remaining moves, initialized from the stage.</li>
+<li>Collection progress by objective index.</li>
+<li>Initial and remaining blocker counts.</li>
+<li>Derived <code>isWon</code> and <code>isLost</code> values.</li>
+</ul>
+<p>Win requires all collection targets and, when the stage began with blockers, zero remaining blockers. Loss requires moves at or below zero while not won.</p>
+<h3 id="inventory">Inventory<a class="headerlink" href="#inventory" title="Permanent link">&para;</a></h3>
+<p><code>InventoryModel</code> wraps a mutable <code>Inventory</code> and <code>InventoryRepository</code>. Counts for IDs <code>101..105</code> default to zero and are stored as JSON under <code>player_inventory_v4</code>.</p>
+<p>The booster belt accepts a drag of one of those IDs onto a playable regular tile. <code>BoardController.placeSpecialAt()</code> replaces that tile type while preserving or assigning its instance ID, then the inventory attempts to spend one item and the board resynchronizes.</p>
+<p>The operation is not atomic: if placement succeeds and persistence reports insufficient inventory, the current code logs an error but does not roll back the board replacement.</p>
+<h3 id="stage-progress-and-preferences">Stage Progress and Preferences<a class="headerlink" href="#stage-progress-and-preferences" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Data</th>
+<th>Storage behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Inventory</td>
+<td>JSON string under <code>player_inventory_v4</code></td>
+</tr>
+<tr>
+<td>Stage progress</td>
+<td>Stage ID to latest <code>cleared</code> or <code>lose</code> result</td>
+</tr>
+<tr>
+<td>Free boost</td>
+<td>Next claim timestamp under <code>free_boost_next_claim_at_ms</code></td>
+</tr>
+<tr>
+<td>Language</td>
+<td><code>vi</code> or <code>en</code></td>
+</tr>
+</tbody>
+</table>
+<p>The free-boost duration is currently 45 seconds. The active menu and pause paths grant two of every special after cooldown. This is prototype/student-project tuning, not a production economy.</p>
+<p>No first-party backend, account model, cloud save, or cross-device synchronization appears in the repository.</p>
+<h2 id="audio">Audio<a class="headerlink" href="#audio" title="Permanent link">&para;</a></h2>
+<p><code>SfxManager</code> is a singleton built on Flame <code>AudioPool</code>. It preloads the declared swap, match, special, blocker, and celebration sounds. <code>assets/audio/sfx_tuning.json</code> provides per-sound volume, cooldown, and playback-delay settings; pool sizes remain in Dart, and the accepted pitch argument is not currently applied.</p>
+<p><code>BgmManager</code> is a singleton built on <code>audioplayers</code>. It loops menu, gameplay, and festival tracks. Browser autoplay failures are retained as a pending retry; the app-level pointer listener calls <code>unlockOnUserInteraction()</code>.</p>
+<p>Audio managers are global for convenience. That reduces wiring in a small project but makes isolation and mocking harder.</p>
+<h2 id="dependency-surface">Dependency Surface<a class="headerlink" href="#dependency-surface" title="Permanent link">&para;</a></h2>
+<p>The direct runtime dependencies declared in <code>pubspec.yaml</code> are:</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Architectural use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flame</code></td>
+<td>Game loop, camera, components, input callbacks, and effects</td>
+</tr>
+<tr>
+<td><code>flame_audio</code></td>
+<td>Pooled sound effects</td>
+</tr>
+<tr>
+<td><code>audioplayers</code></td>
+<td>Background music playback</td>
+</tr>
+<tr>
+<td><code>shared_preferences</code></td>
+<td>Local inventory, progress, language, and cooldown state</td>
+</tr>
+<tr>
+<td><code>logger</code></td>
+<td>Application logging</td>
+</tr>
+<tr>
+<td><code>url_launcher</code></td>
+<td>External feedback form</td>
+</tr>
+<tr>
+<td><code>msix</code></td>
+<td>Windows package configuration</td>
+</tr>
+</tbody>
+</table>
+<p>There is no dependency-injection framework, provider package, database, analytics SDK, network client, or Google Mobile Ads package in the current manifest.</p>
+<h2 id="design-decisions-and-trade-offs">Design Decisions and Trade-offs<a class="headerlink" href="#design-decisions-and-trade-offs" title="Permanent link">&para;</a></h2>
+<h3 id="flutter-plus-flame">Flutter plus Flame<a class="headerlink" href="#flutter-plus-flame" title="Permanent link">&para;</a></h3>
+<p><strong>Decision:</strong> use Flutter for app UI and embed a Flame scene for the board.</p>
+<p><strong>Reason:</strong> screen navigation, dialogs, safe areas, and HUD composition fit Flutter; sprite identity, effects, and frame-timed board feedback fit Flame.</p>
+<p><strong>Cost:</strong> two lifecycle and coordinate systems must be synchronized through <code>BoardViewport</code> and <code>BoardGame</code>.</p>
+<h3 id="json-authored-layouts-and-stages">JSON-authored Layouts and Stages<a class="headerlink" href="#json-authored-layouts-and-stages" title="Permanent link">&para;</a></h3>
+<p><strong>Decision:</strong> keep visual placement and level content in assets.</p>
+<p><strong>Reason:</strong> stage and screen iteration do not require changes to match logic.</p>
+<p><strong>Cost:</strong> schema errors move from compile time to runtime. The existing validator must be connected to the load path to control that risk.</p>
+<h3 id="changenotifier-and-singletons">ChangeNotifier and Singletons<a class="headerlink" href="#changenotifier-and-singletons" title="Permanent link">&para;</a></h3>
+<p><strong>Decision:</strong> use Flutter primitives and singleton audio managers rather than a state-management/DI framework.</p>
+<p><strong>Reason:</strong> the project scope is small and local.</p>
+<p><strong>Cost:</strong> listener ownership is manual, global services are difficult to replace in tests, and screen-local models can be recreated independently.</p>
+<h2 id="known-constraints-and-risks">Known Constraints and Risks<a class="headerlink" href="#known-constraints-and-risks" title="Permanent link">&para;</a></h2>
+<p>This table records observed repository behavior, not speculative future work.</p>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Constraint</th>
+<th>Evidence and impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>High</td>
+<td>Automated test scaffold is invalid</td>
+<td><code>test/widget_test.dart</code> references <code>MyApp</code>, which does not exist. The suite cannot be a reliable gate until replaced.</td>
+</tr>
+<tr>
+<td>High</td>
+<td>Stage progression mismatch after a win</td>
+<td>Routes and world selection support 25 stages, but <code>GameplayScreen1</code> auto-advances only when the next stage is <code>&lt;= 20</code>.</td>
+</tr>
+<tr>
+<td>High</td>
+<td>Booster placement and spend are not atomic</td>
+<td>A successful board replacement is not rolled back if inventory spending fails.</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>Stage validation is disconnected</td>
+<td><code>StageValidator</code> exists but <code>StageLoader.loadFromAsset()</code> does not call it.</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>Weighted spawn has two owners</td>
+<td><code>StageLoader</code> resolves <code>0</code> entries, while <code>StageBuilder</code> also implements weighted resolution. This obscures where initial-match prevention is guaranteed.</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>Blocker damage differs by clear source</td>
+<td>Adjacent regular clears can break scooters; special clears do not. This must be intentional in design or unified in code.</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>Asset manifest references a missing directory</td>
+<td><code>pubspec.yaml</code> declares <code>assets/test/</code>, which is not checked into the repository.</td>
+</tr>
+<tr>
+<td>Low</td>
+<td>Platform package residue</td>
+<td>Android contains a second <code>MainActivity.kt</code> under an older package path in addition to the active <code>com.cuongtmodwork.phologic</code> path.</td>
+</tr>
+<tr>
+<td>Low</td>
+<td>Web metadata remains scaffold-like</td>
+<td><code>web/manifest.json</code> still contains the generic project description and default theme colors.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="testing-strategy">Testing Strategy<a class="headerlink" href="#testing-strategy" title="Permanent link">&para;</a></h2>
+<h3 id="current">Current<a class="headerlink" href="#current" title="Permanent link">&para;</a></h3>
+<p>The repository does not contain meaningful automated coverage. The default widget test is stale. Manual playthrough evidence exists as screenshots and GIFs, but media is not a regression suite.</p>
+<h3 id="recommended-test-layers">Recommended Test Layers<a class="headerlink" href="#recommended-test-layers" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Pure unit tests</strong></li>
+<li>Coordinate equality and adjacency.</li>
+<li>Horizontal/vertical match grouping and overlap.</li>
+<li>2x2 detection.</li>
+<li>Special candidate priority and spawn location.</li>
+<li>Every <code>SpecialComboResolver</code> pair.</li>
+<li>Gravity around voids and blockers.</li>
+<li>Solvability and shuffle postconditions.</li>
+<li>
+<p>Objective and blocker terminal-state rules.</p>
+</li>
+<li>
+<p><strong>Content tests</strong></p>
+</li>
+<li>Parse and validate all 25 stage files.</li>
+<li>Assert 8x7 matrix dimensions for the current campaign.</li>
+<li>Assert referenced regular tile and bed IDs exist.</li>
+<li>Assert every stage can initialize without a match when <code>allowInitialMatches</code> is false.</li>
+<li>
+<p>Assert the initialized board has at least one legal move.</p>
+</li>
+<li>
+<p><strong>Widget tests</strong></p>
+</li>
+<li>Route creation for stages 1-25.</li>
+<li>JSON layout loading error states.</li>
+<li>Objective and move-counter updates.</li>
+<li>
+<p>Win, lose, pause, and no-move modal actions.</p>
+</li>
+<li>
+<p><strong>Integration tests</strong></p>
+</li>
+<li>Valid and invalid swap transactions.</li>
+<li>Booster placement with successful and failed inventory spend.</li>
+<li>Stage completion persistence and next-stage navigation.</li>
+<li>
+<p>Web audio unlock after first interaction.</p>
+</li>
+<li>
+<p><strong>Visual checks</strong></p>
+</li>
+<li>Golden tests for menu, world, and gameplay at representative phone/tablet dimensions.</li>
+<li>Screenshot checks that shaped boards align to the board frame.</li>
+<li>VFX smoke tests for source removal, target timing, and duplicate-particle suppression.</li>
+</ol>
+<p>Random-dependent rule tests should inject seeded <code>Random</code> instances. BoardController currently creates some randomness internally, so constructor-level injection would improve determinism.</p>
+<h2 id="extension-playbooks">Extension Playbooks<a class="headerlink" href="#extension-playbooks" title="Permanent link">&para;</a></h2>
+<h3 id="add-a-stage-within-the-current-campaign">Add a Stage Within the Current Campaign<a class="headerlink" href="#add-a-stage-within-the-current-campaign" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Add <code>assets/stages/stage_XXX.json</code>.</li>
+<li>Keep tile and bed matrices consistent with <code>rows</code> and <code>columns</code>.</li>
+<li>Use only declared regular tile IDs for fixed cells and objectives.</li>
+<li>Run <code>StageValidator</code> in a content test.</li>
+<li>Confirm the stage ID has a generated route and a world-map lantern.</li>
+<li>Playtest initialization, legal moves, objective feasibility, and terminal dialogs.</li>
+</ol>
+<p>Stages above 25 require changes to route generation and world-map pagination.</p>
+<h3 id="add-a-new-regular-tile">Add a New Regular Tile<a class="headerlink" href="#add-a-new-regular-tile" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Add its sprite to the atlas and atlas metadata, following <code>TileAtlasLoader</code> conventions.</li>
+<li>Add a <code>TileDef</code> to every stage that can spawn it.</li>
+<li>Add the particle mapping if bespoke clear feedback is required.</li>
+<li>Update objective art/HUD handling and stage content tests.</li>
+</ol>
+<h3 id="add-a-new-special-tile">Add a New Special Tile<a class="headerlink" href="#add-a-new-special-tile" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Reserve an ID outside the regular range and document its invariant.</li>
+<li>Register its <code>TileDef</code> in <code>BoardGame</code>.</li>
+<li>Add creation logic in <code>SpecialTileSpawner</code>.</li>
+<li>Add affected-cell logic in the activation and combo resolvers.</li>
+<li>Implement VFX and audio dispatch.</li>
+<li>Add inventory representation and drag/drop support if it is a booster.</li>
+<li>Test every interaction with IDs <code>101..105</code>, blockers, voids, objectives, and cascades.</li>
+</ol>
+<h2 id="code-index">Code Index<a class="headerlink" href="#code-index" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Primary source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bootstrap</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/main.dart"><code>lib/main.dart</code></a></td>
+</tr>
+<tr>
+<td>Application root</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/app/app.dart"><code>lib/src/app/app.dart</code></a></td>
+</tr>
+<tr>
+<td>Routes</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/app/routes.dart"><code>lib/src/app/routes.dart</code></a></td>
+</tr>
+<tr>
+<td>Logical grid</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/model/grid_model.dart"><code>grid_model.dart</code></a></td>
+</tr>
+<tr>
+<td>Rule engine</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/board/board_controller.dart"><code>board_controller.dart</code></a></td>
+</tr>
+<tr>
+<td>Flame rendering</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/board/board_game.dart"><code>board_game.dart</code></a></td>
+</tr>
+<tr>
+<td>Special creation</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/board/special_tile_spawner.dart"><code>special_tile_spawner.dart</code></a></td>
+</tr>
+<tr>
+<td>Single activation</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/board/special_activation_resolver.dart"><code>special_activation_resolver.dart</code></a></td>
+</tr>
+<tr>
+<td>Special combinations</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/board/special_combo_resolver.dart"><code>special_combo_resolver.dart</code></a></td>
+</tr>
+<tr>
+<td>Solvability</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/board/board_solvability.dart"><code>board_solvability.dart</code></a></td>
+</tr>
+<tr>
+<td>Stage schema</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/stages/stage_data.dart"><code>stage_data.dart</code></a></td>
+</tr>
+<tr>
+<td>Stage loading</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/stages/stage_loader.dart"><code>stage_loader.dart</code></a></td>
+</tr>
+<tr>
+<td>Stage construction</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/stages/stage_builder.dart"><code>stage_builder.dart</code></a></td>
+</tr>
+<tr>
+<td>Stage validation</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/stages/stage_validator.dart"><code>stage_validator.dart</code></a></td>
+</tr>
+<tr>
+<td>Session state</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/game/game_state_model.dart"><code>game_state_model.dart</code></a></td>
+</tr>
+<tr>
+<td>Inventory</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/tree/main/lib/src/game/inventory"><code>lib/src/game/inventory/</code></a></td>
+</tr>
+<tr>
+<td>Gameplay composition</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/screens/gameplay/gameplay_screen_1.dart"><code>gameplay_screen_1.dart</code></a></td>
+</tr>
+<tr>
+<td>Flame embedding</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/lib/src/screens/gameplay/board_viewport.dart"><code>board_viewport.dart</code></a></td>
+</tr>
+<tr>
+<td>VFX</td>
+<td><a href="https://github.com/CuongMe/pho_logic_mvp/tree/main/lib/src/game/vfx"><code>lib/src/game/vfx/</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="portfolio-context">Portfolio Context<a class="headerlink" href="#portfolio-context" title="Permanent link">&para;</a></h2>
+<p>This architecture is intentionally documented as a student engineering case study:</p>
+<ul>
+<li>It demonstrates separation between rule state and rendering state.</li>
+<li>It uses data-authored stages and layouts to support iteration.</li>
+<li>It contains implemented gameplay depth beyond a framework tutorial.</li>
+<li>It also retains prototype shortcuts and incomplete test infrastructure, which are documented rather than hidden.</li>
+</ul>
+<p>The repository includes the <a href="https://github.com/CuongMe/pho_logic_mvp/blob/main/LICENSE">GNU General Public License v3</a>. Nothing in this document changes those terms.</p>
+              </article>
+            </div>
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+      </main>
+        <footer class="md-footer">
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 CuongTModwork. Student portfolio project.
+    </div>
+</div>
+<div class="md-social">
+    <a href="https://play.google.com/store/apps/details?id=com.cuongtmodwork.phologic" target="_blank" rel="noopener" title="Pho Logic on Google Play" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M293.6 234.3 72.9 13l280.8 161.2zM15.3 0C2.3 6.8-6.4 19.2-6.4 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256zm425.2 225.6-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8M72.9 499l280.8-161.2-60.1-60.1z"/></svg>
+    </a>
+    <a href="https://github.com/CuongMe/pho_logic_mvp" target="_blank" rel="noopener" title="Pho Logic source repository" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+</div>
+    </div>
+  </div>
+</footer>
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.tracking", "navigation.path", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tooltips", "content.tabs.link"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
+        <script src="assets/javascripts/audio-demos.js"></script>
+  </body>
+</html>

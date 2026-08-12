@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="description" content="A practical guide to the Pho Logic board domain and its collaborators.">
+        <meta name="author" content="CuongTModwork">
+        <link rel="canonical" href="https://cuongme.github.io/pho_logic_mvp/board-game.html">
+        <link rel="prev" href="architecture.html">
+        <link rel="next" href="board-game-rendering.html">
+      <link rel="icon" href="assets/images/app_launcher_icon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+        <title>Board Engine Guide - Pho Logic</title>
+      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      <link rel="stylesheet" href="assets/stylesheets/extra.css">
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+  </head>
+    <body dir="ltr" data-md-color-scheme="phologic-light" data-md-color-primary="custom" data-md-color-accent="custom">
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+        <a href="#pho-logic-board-engine-guide" class="md-skip">
+          Skip to content
+        </a>
+    </div>
+    <div data-md-component="announce">
+    </div>
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="Pho Logic" class="md-header__button md-logo" aria-label="Pho Logic" data-md-component="logo">
+  <img src="assets/images/app_launcher_icon.png" alt="logo">
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Pho Logic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+              Board Engine Guide
+          </span>
+        </div>
+      </div>
+    </div>
+        <label class="md-header__button md-icon" for="__search">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      <div class="md-header__source">
+        <a href="https://github.com/CuongMe/pho_logic_mvp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CuongMe/pho_logic_mvp
+  </div>
+</a>
+      </div>
+  </nav>
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+    <li class="md-tabs__item">
+      <a href="index.html" class="md-tabs__link">
+  Home / Privacy
+      </a>
+    </li>
+    <li class="md-tabs__item">
+      <a href="gdd.html" class="md-tabs__link">
+  Game Design
+      </a>
+    </li>
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="documentation.html" class="md-tabs__link">
+  Engineering
+        </a>
+      </li>
+    </ul>
+  </div>
+</nav>
+</header>
+    <div class="md-container" data-md-component="container">
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="Pho Logic" class="md-nav__button md-logo" aria-label="Pho Logic" data-md-component="logo">
+  <img src="assets/images/app_launcher_icon.png" alt="logo">
+    </a>
+    Pho Logic
+  </label>
+    <div class="md-nav__source">
+      <a href="https://github.com/CuongMe/pho_logic_mvp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CuongMe/pho_logic_mvp
+  </div>
+</a>
+    </div>
+  <ul class="md-nav__list" data-md-scrollfix>
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Home / Privacy
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="gdd.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Game Design
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+  <span class="md-ellipsis">
+    Engineering
+  </span>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+    Engineering
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+    <li class="md-nav__item">
+      <a href="documentation.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Technical Overview
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="architecture.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    System Architecture
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item md-nav__item--active">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+  <span class="md-ellipsis">
+    Board Engine Guide
+  </span>
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      <a href="board-game.html" class="md-nav__link md-nav__link--active">
+  <span class="md-ellipsis">
+    Board Engine Guide
+  </span>
+      </a>
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+        Purpose
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#core-data" class="md-nav__link">
+    <span class="md-ellipsis">
+        Core Data
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Core Data">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#coord" class="md-nav__link">
+    <span class="md-ellipsis">
+        Coord
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#cell" class="md-nav__link">
+    <span class="md-ellipsis">
+        Cell
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+        Invariants
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#session-initialization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Session Initialization
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#turn-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+        Turn Flow
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#match-and-special-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+        Match and Special Rules
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#blockers-gravity-and-refill" class="md-nav__link">
+    <span class="md-ellipsis">
+        Blockers, Gravity, and Refill
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#rendering-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Rendering Synchronization
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#state-events" class="md-nav__link">
+    <span class="md-ellipsis">
+        State Events
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#booster-placement" class="md-nav__link">
+    <span class="md-ellipsis">
+        Booster Placement
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#solvability" class="md-nav__link">
+    <span class="md-ellipsis">
+        Solvability
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#debugging-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+        Debugging Checklist
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#extension-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+        Extension Rules
+    </span>
+  </a>
+</li>
+    </ul>
+</nav>
+    </li>
+    <li class="md-nav__item">
+      <a href="board-game-rendering.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    BoardGame Rendering
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="board-controller.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    BoardController Rules
+  </span>
+      </a>
+    </li>
+          </ul>
+        </nav>
+    </li>
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+        Purpose
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#core-data" class="md-nav__link">
+    <span class="md-ellipsis">
+        Core Data
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Core Data">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#coord" class="md-nav__link">
+    <span class="md-ellipsis">
+        Coord
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#cell" class="md-nav__link">
+    <span class="md-ellipsis">
+        Cell
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+        Invariants
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#session-initialization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Session Initialization
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#turn-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+        Turn Flow
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#match-and-special-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+        Match and Special Rules
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#blockers-gravity-and-refill" class="md-nav__link">
+    <span class="md-ellipsis">
+        Blockers, Gravity, and Refill
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#rendering-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Rendering Synchronization
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#state-events" class="md-nav__link">
+    <span class="md-ellipsis">
+        State Events
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#booster-placement" class="md-nav__link">
+    <span class="md-ellipsis">
+        Booster Placement
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#solvability" class="md-nav__link">
+    <span class="md-ellipsis">
+        Solvability
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#debugging-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+        Debugging Checklist
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#extension-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+        Extension Rules
+    </span>
+  </a>
+</li>
+    </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            <div class="md-content" data-md-component="content">
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+    <li class="md-path__item">
+      <a href="index.html" class="md-path__link">
+  <span class="md-ellipsis">
+    Home / Privacy
+  </span>
+      </a>
+    </li>
+      <li class="md-path__item">
+        <a href="documentation.html" class="md-path__link">
+  <span class="md-ellipsis">
+    Engineering
+  </span>
+        </a>
+      </li>
+    </ol>
+  </nav>
+              <article class="md-content__inner md-typeset">
+<h1 id="pho-logic-board-engine-guide">Pho Logic Board Engine Guide<a class="headerlink" href="#pho-logic-board-engine-guide" title="Permanent link">&para;</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Scope</p>
+<p>This guide describes the implemented board engine in Pho Logic version
+<code>1.0.0+6</code>. Pho Logic is a student portfolio project. For system-wide
+boundaries, see the <a href="architecture.html">architecture reference</a>; for
+player-facing rules, see the <a href="gdd.html">GDD</a>.</p>
+</div>
+<h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
+<p>The board engine is split so that game truth, orchestration, presentation, and screen state do not share ownership:</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GridModel</code></td>
+<td>Authoritative cells, tile IDs, instance IDs, beds, and blockers</td>
+</tr>
+<tr>
+<td><code>BoardController</code></td>
+<td>Swaps, matches, special rules, clearing, gravity, refill, and shuffle</td>
+</tr>
+<tr>
+<td><code>BoardGame</code></td>
+<td>Flame components, tap handling, model synchronization, particles, and VFX</td>
+</tr>
+<tr>
+<td><code>BoardViewport</code></td>
+<td>Flutter/Flame embedding and booster drop conversion</td>
+</tr>
+<tr>
+<td><code>GameStateModel</code></td>
+<td>Moves, objectives, blockers, win, and loss</td>
+</tr>
+</tbody>
+</table>
+<pre class="mermaid"><code>flowchart LR
+    Input[Tap or booster drop] --&gt; Viewport[BoardViewport / BoardGame]
+    Viewport --&gt; Controller[BoardController]
+    Controller --&gt; Grid[GridModel]
+    Grid --&gt; Sync[BoardGame.syncFromModel]
+    Sync --&gt; Components[Flame components]
+    Controller --&gt; ClearEvent[Regular victim event]
+    ClearEvent --&gt; State[GameStateModel]</code></pre>
+<h2 id="core-data">Core Data<a class="headerlink" href="#core-data" title="Permanent link">&para;</a></h2>
+<h3 id="coord">Coord<a class="headerlink" href="#coord" title="Permanent link">&para;</a></h3>
+<p><code>Coord(row, col)</code> is the logical position type. It is immutable and supports equality, hashing, and orthogonal-adjacency checks. It is used in maps and sets throughout rules and rendering.</p>
+<h3 id="cell">Cell<a class="headerlink" href="#cell" title="Permanent link">&para;</a></h3>
+<p>A cell can contain:</p>
+<ul>
+<li><code>tileTypeId</code>: regular <code>1..6</code>, special <code>101..105</code>, or <code>null</code>.</li>
+<li><code>tileInstanceId</code>: stable identity while a tile moves.</li>
+<li><code>bedId</code>: <code>-1</code> for void or a playable bed ID.</li>
+<li>blocker state, currently the scooter blocker.</li>
+</ul>
+<h3 id="invariants">Invariants<a class="headerlink" href="#invariants" title="Permanent link">&para;</a></h3>
+<ol>
+<li><code>GridModel</code> is the source of truth.</li>
+<li>Void cells never swap, match, refill, or receive effects.</li>
+<li>Blockers reject swaps and divide gravity into segments.</li>
+<li>Refill creates regular IDs only.</li>
+<li>Moving tiles preserve their instance IDs.</li>
+<li>Newly spawned tiles receive new instance IDs.</li>
+</ol>
+<h2 id="session-initialization">Session Initialization<a class="headerlink" href="#session-initialization" title="Permanent link">&para;</a></h2>
+<ol>
+<li><code>StageLoader</code> parses a stage asset and resolves weighted <code>0</code> entries.</li>
+<li><code>StageBuilder</code> converts the matrices to <code>BoardState</code>.</li>
+<li><code>GridModel.fromBoardState()</code> creates the cell matrix.</li>
+<li><code>BoardGame</code> builds regular and special tile-definition lookup maps.</li>
+<li><code>BoardController.initializeInstanceIds()</code> fills missing tile identities.</li>
+<li><code>BoardController.stabilizeInitialBoard()</code> removes accidental starting matches.</li>
+<li><code>BoardGame.onLoad()</code> creates beds, blockers, and tile components.</li>
+</ol>
+<p>The stage's <code>grid.shape.mask</code> is not consumed by current board construction; <code>bedMap</code> determines playable cells.</p>
+<h2 id="turn-flow">Turn Flow<a class="headerlink" href="#turn-flow" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart TD
+    Pair[Adjacent selected tiles] --&gt; Swap[Logical swap]
+    Swap --&gt; Sync[Animate positions]
+    Sync --&gt; Valid{Line, 2x2, or special?}
+    Valid -- no --&gt; Undo[Swap back]
+    Valid -- yes --&gt; Resolve[Resolve clear and specials]
+    Resolve --&gt; Gravity[Apply gravity]
+    Gravity --&gt; Refill[Refill regular tiles]
+    Refill --&gt; Cascade{New pattern?}
+    Cascade -- yes --&gt; Resolve
+    Cascade -- no --&gt; Check[Check legal move]
+    Check --&gt; Move[Consume one move]</code></pre>
+<p>An invalid swap returns without spending a move. <code>BoardGame</code> holds a busy flag for the complete asynchronous transaction, preventing a second input from interleaving with model mutation or VFX.</p>
+<h2 id="match-and-special-rules">Match and Special Rules<a class="headerlink" href="#match-and-special-rules" title="Permanent link">&para;</a></h2>
+<p>Line detection accepts horizontal and vertical runs of at least three equal regular IDs. The engine also treats a same-type regular 2x2 as a valid pattern.</p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Three or more in a line</td>
+<td>Clear regular victims</td>
+</tr>
+<tr>
+<td>Exactly four horizontal</td>
+<td>Spawn ID <code>101</code>, horizontal Party Popper</td>
+</tr>
+<tr>
+<td>Exactly four vertical</td>
+<td>Spawn ID <code>102</code>, vertical Party Popper</td>
+</tr>
+<tr>
+<td>Exactly five straight</td>
+<td>Spawn ID <code>103</code>, Sticky Rice Bomb</td>
+</tr>
+<tr>
+<td>Intersecting runs with union 5-6</td>
+<td>Spawn ID <code>104</code>, Firecracker</td>
+</tr>
+<tr>
+<td>Same-type 2x2</td>
+<td>Spawn ID <code>105</code>, Dragon Fly</td>
+</tr>
+</tbody>
+</table>
+<p>When creation candidates overlap, the spawner processes Sticky Rice, Firecracker, Dragon Fly, then Party Popper, accepting only non-overlapping patterns.</p>
+<p>Normal activation and special-to-special combination are separate policies. A special encountered within another special's clear is removed without recursively activating another VFX.</p>
+<h2 id="blockers-gravity-and-refill">Blockers, Gravity, and Refill<a class="headerlink" href="#blockers-gravity-and-refill" title="Permanent link">&para;</a></h2>
+<p>A scooter blocker occupies a cell without a tile. It:</p>
+<ul>
+<li>Cannot be swapped.</li>
+<li>Stops a falling tile from crossing its row.</li>
+<li>Breaks when an adjacent regular match clears.</li>
+<li>Does not currently break from an adjacent special clear.</li>
+<li>Counts toward the stage win condition.</li>
+</ul>
+<p>Gravity compacts each column inside playable, blocker-separated segments. Refill then creates weighted regular tiles in empty playable cells. Specials never appear from normal refill.</p>
+<h2 id="rendering-synchronization">Rendering Synchronization<a class="headerlink" href="#rendering-synchronization" title="Permanent link">&para;</a></h2>
+<p>Coordinates identify places, not moving objects. The renderer therefore tracks three tile registries:</p>
+<table>
+<thead>
+<tr>
+<th>Map</th>
+<th>Question answered</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tilesByInstanceId</code></td>
+<td>Which component renders this tile?</td>
+</tr>
+<tr>
+<td><code>instanceAtCoord</code></td>
+<td>Which tile is now at this cell?</td>
+</tr>
+<tr>
+<td><code>coordByInstanceId</code></td>
+<td>Where is this tile now?</td>
+</tr>
+</tbody>
+</table>
+<p><code>syncFromModel()</code> creates replacement coordinate maps, animates existing components to model positions, changes sprites when a type changes, adds missing components, removes orphans, and swaps the maps atomically. <code>validateBoardSync()</code> performs a defensive repair pass.</p>
+<p>For detailed rendering behavior, see the <a href="board-game-rendering.html">BoardGame rendering reference</a>.</p>
+<h2 id="state-events">State Events<a class="headerlink" href="#state-events" title="Permanent link">&para;</a></h2>
+<p>The controller captures regular tile types before clearing. <code>BoardGame</code> receives that map and:</p>
+<ol>
+<li>Spawns object-specific particles unless a VFX owns the impact.</li>
+<li>Forwards regular victims to <code>GameStateModel</code>.</li>
+</ol>
+<p><code>GameStateModel</code> clamps objective progress to target counts. It also tracks initial and remaining blocker counts. A valid swap consumes one move only after the complete resolution transaction succeeds.</p>
+<h2 id="booster-placement">Booster Placement<a class="headerlink" href="#booster-placement" title="Permanent link">&para;</a></h2>
+<p><code>BoardViewport</code> converts the drop position from screen pixels to a logical coordinate. A target must be playable and contain a regular tile. <code>placeSpecialAt()</code> changes the tile type while preserving identity, then inventory spending is attempted.</p>
+<div class="admonition warning">
+<p class="admonition-title">Non-atomic transaction</p>
+<p>Placement and spending are not atomic. A failed spend logs an error but
+does not restore the original regular tile.</p>
+</div>
+<h2 id="solvability">Solvability<a class="headerlink" href="#solvability" title="Permanent link">&para;</a></h2>
+<p>The possible-move check uses the same acceptance criteria as a player action: line, 2x2, or special involvement. A stable board shuffles only when:</p>
+<ul>
+<li>No special exists.</li>
+<li>No possible move exists.</li>
+</ul>
+<p>The shuffle seeks a board with no unintended starting match when required and at least one legal move.</p>
+<h2 id="debugging-checklist">Debugging Checklist<a class="headerlink" href="#debugging-checklist" title="Permanent link">&para;</a></h2>
+<p>When a board/render discrepancy appears:</p>
+<ol>
+<li>Inspect the <code>GridModel</code> cell values first.</li>
+<li>Confirm every non-null tile has a unique <code>tileInstanceId</code>.</li>
+<li>Compare <code>instanceAtCoord</code> with model instance IDs.</li>
+<li>Confirm <code>coordByInstanceId</code> is the inverse mapping.</li>
+<li>Run or inspect <code>validateBoardSync()</code> diagnostics.</li>
+<li>Check whether VFX cleared cells directly before the standard controller phase.</li>
+<li>Verify that the busy flag was held across the full transaction.</li>
+</ol>
+<p>When an objective discrepancy appears:</p>
+<ol>
+<li>Confirm victim IDs were captured before clearing.</li>
+<li>Confirm specials were filtered and regular IDs retained.</li>
+<li>Confirm VFX-controlled clears call the shared clear path.</li>
+<li>Check that scooter changes use the blocker callback, not tile objectives.</li>
+</ol>
+<h2 id="extension-rules">Extension Rules<a class="headerlink" href="#extension-rules" title="Permanent link">&para;</a></h2>
+<p>Any new board feature should preserve:</p>
+<ul>
+<li>Model-first mutation.</li>
+<li>Stable identity for moving tiles.</li>
+<li>Explicit VFX/logical timing.</li>
+<li>One owner for objective events.</li>
+<li>Blocker and void filtering.</li>
+<li>Seedable randomness for tests.</li>
+<li>A stable, solvable post-turn board.</li>
+</ul>
+<p>The next documents provide focused implementation references:</p>
+<ul>
+<li><a href="board-game-rendering.html">BoardGame rendering</a></li>
+<li><a href="board-controller.html">BoardController rules</a></li>
+</ul>
+              </article>
+            </div>
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+      </main>
+        <footer class="md-footer">
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 CuongTModwork. Student portfolio project.
+    </div>
+</div>
+<div class="md-social">
+    <a href="https://play.google.com/store/apps/details?id=com.cuongtmodwork.phologic" target="_blank" rel="noopener" title="Pho Logic on Google Play" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M293.6 234.3 72.9 13l280.8 161.2zM15.3 0C2.3 6.8-6.4 19.2-6.4 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256zm425.2 225.6-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8M72.9 499l280.8-161.2-60.1-60.1z"/></svg>
+    </a>
+    <a href="https://github.com/CuongMe/pho_logic_mvp" target="_blank" rel="noopener" title="Pho Logic source repository" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+</div>
+    </div>
+  </div>
+</footer>
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.tracking", "navigation.path", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tooltips", "content.tabs.link"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
+        <script src="assets/javascripts/audio-demos.js"></script>
+  </body>
+</html>

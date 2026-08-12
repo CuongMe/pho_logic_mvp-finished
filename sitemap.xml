@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://cuongme.github.io/pho_logic_mvp/index.html</loc>
+         <lastmod>2026-08-12</lastmod>
+    </url>
+    <url>
+         <loc>https://cuongme.github.io/pho_logic_mvp/architecture.html</loc>
+         <lastmod>2026-08-12</lastmod>
+    </url>
+    <url>
+         <loc>https://cuongme.github.io/pho_logic_mvp/board-controller.html</loc>
+         <lastmod>2026-08-12</lastmod>
+    </url>
+    <url>
+         <loc>https://cuongme.github.io/pho_logic_mvp/board-game-rendering.html</loc>
+         <lastmod>2026-08-12</lastmod>
+    </url>
+    <url>
+         <loc>https://cuongme.github.io/pho_logic_mvp/board-game.html</loc>
+         <lastmod>2026-08-12</lastmod>
+    </url>
+    <url>
+         <loc>https://cuongme.github.io/pho_logic_mvp/documentation.html</loc>
+         <lastmod>2026-08-12</lastmod>
+    </url>
+    <url>
+         <loc>https://cuongme.github.io/pho_logic_mvp/gdd.html</loc>
+         <lastmod>2026-08-12</lastmod>
+    </url>
+</urlset>

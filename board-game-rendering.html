@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="description" content="Flame component identity, synchronization, input, and VFX integration in Pho Logic.">
+        <meta name="author" content="CuongTModwork">
+        <link rel="canonical" href="https://cuongme.github.io/pho_logic_mvp/board-game-rendering.html">
+        <link rel="prev" href="board-game.html">
+        <link rel="next" href="board-controller.html">
+      <link rel="icon" href="assets/images/app_launcher_icon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+        <title>BoardGame Rendering - Pho Logic</title>
+      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      <link rel="stylesheet" href="assets/stylesheets/extra.css">
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+  </head>
+    <body dir="ltr" data-md-color-scheme="phologic-light" data-md-color-primary="custom" data-md-color-accent="custom">
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+        <a href="#boardgame-rendering-reference" class="md-skip">
+          Skip to content
+        </a>
+    </div>
+    <div data-md-component="announce">
+    </div>
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="Pho Logic" class="md-header__button md-logo" aria-label="Pho Logic" data-md-component="logo">
+  <img src="assets/images/app_launcher_icon.png" alt="logo">
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Pho Logic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+              BoardGame Rendering
+          </span>
+        </div>
+      </div>
+    </div>
+        <label class="md-header__button md-icon" for="__search">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      <div class="md-header__source">
+        <a href="https://github.com/CuongMe/pho_logic_mvp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CuongMe/pho_logic_mvp
+  </div>
+</a>
+      </div>
+  </nav>
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+    <li class="md-tabs__item">
+      <a href="index.html" class="md-tabs__link">
+  Home / Privacy
+      </a>
+    </li>
+    <li class="md-tabs__item">
+      <a href="gdd.html" class="md-tabs__link">
+  Game Design
+      </a>
+    </li>
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="documentation.html" class="md-tabs__link">
+  Engineering
+        </a>
+      </li>
+    </ul>
+  </div>
+</nav>
+</header>
+    <div class="md-container" data-md-component="container">
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="Pho Logic" class="md-nav__button md-logo" aria-label="Pho Logic" data-md-component="logo">
+  <img src="assets/images/app_launcher_icon.png" alt="logo">
+    </a>
+    Pho Logic
+  </label>
+    <div class="md-nav__source">
+      <a href="https://github.com/CuongMe/pho_logic_mvp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CuongMe/pho_logic_mvp
+  </div>
+</a>
+    </div>
+  <ul class="md-nav__list" data-md-scrollfix>
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Home / Privacy
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="gdd.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Game Design
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+  <span class="md-ellipsis">
+    Engineering
+  </span>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+    Engineering
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+    <li class="md-nav__item">
+      <a href="documentation.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Technical Overview
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="architecture.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    System Architecture
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="board-game.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Board Engine Guide
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item md-nav__item--active">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+  <span class="md-ellipsis">
+    BoardGame Rendering
+  </span>
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      <a href="board-game-rendering.html" class="md-nav__link md-nav__link--active">
+  <span class="md-ellipsis">
+    BoardGame Rendering
+  </span>
+      </a>
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+        <li class="md-nav__item">
+  <a href="#role" class="md-nav__link">
+    <span class="md-ellipsis">
+        Role
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#construction" class="md-nav__link">
+    <span class="md-ellipsis">
+        Construction
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#component-registries" class="md-nav__link">
+    <span class="md-ellipsis">
+        Component Registries
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Component Registries">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#registry-invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+        Registry Invariants
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#coordinate-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+        Coordinate Conversion
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#load-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+        Load Lifecycle
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#input-state" class="md-nav__link">
+    <span class="md-ellipsis">
+        Input State
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#controller-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+        Controller Callbacks
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Controller Callbacks">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#clear-callback" class="md-nav__link">
+    <span class="md-ellipsis">
+        Clear Callback
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#blocker-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+        Blocker Callbacks
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#special-callback" class="md-nav__link">
+    <span class="md-ellipsis">
+        Special Callback
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#swap-orchestration" class="md-nav__link">
+    <span class="md-ellipsis">
+        Swap Orchestration
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#model-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Model Synchronization
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#defensive-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+        Defensive Validation
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#particle-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+        Particle Strategy
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#direct-vfx-clears" class="md-nav__link">
+    <span class="md-ellipsis">
+        Direct VFX Clears
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#blocker-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Blocker Synchronization
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#change-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+        Change Checklist
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#common-failure-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+        Common Failure Modes
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#recommended-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+        Recommended Tests
+    </span>
+  </a>
+</li>
+    </ul>
+</nav>
+    </li>
+    <li class="md-nav__item">
+      <a href="board-controller.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    BoardController Rules
+  </span>
+      </a>
+    </li>
+          </ul>
+        </nav>
+    </li>
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+        <li class="md-nav__item">
+  <a href="#role" class="md-nav__link">
+    <span class="md-ellipsis">
+        Role
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#construction" class="md-nav__link">
+    <span class="md-ellipsis">
+        Construction
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#component-registries" class="md-nav__link">
+    <span class="md-ellipsis">
+        Component Registries
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Component Registries">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#registry-invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+        Registry Invariants
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#coordinate-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+        Coordinate Conversion
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#load-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+        Load Lifecycle
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#input-state" class="md-nav__link">
+    <span class="md-ellipsis">
+        Input State
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#controller-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+        Controller Callbacks
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Controller Callbacks">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#clear-callback" class="md-nav__link">
+    <span class="md-ellipsis">
+        Clear Callback
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#blocker-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+        Blocker Callbacks
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#special-callback" class="md-nav__link">
+    <span class="md-ellipsis">
+        Special Callback
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#swap-orchestration" class="md-nav__link">
+    <span class="md-ellipsis">
+        Swap Orchestration
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#model-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Model Synchronization
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#defensive-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+        Defensive Validation
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#particle-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+        Particle Strategy
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#direct-vfx-clears" class="md-nav__link">
+    <span class="md-ellipsis">
+        Direct VFX Clears
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#blocker-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Blocker Synchronization
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#change-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+        Change Checklist
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#common-failure-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+        Common Failure Modes
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#recommended-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+        Recommended Tests
+    </span>
+  </a>
+</li>
+    </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            <div class="md-content" data-md-component="content">
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+    <li class="md-path__item">
+      <a href="index.html" class="md-path__link">
+  <span class="md-ellipsis">
+    Home / Privacy
+  </span>
+      </a>
+    </li>
+      <li class="md-path__item">
+        <a href="documentation.html" class="md-path__link">
+  <span class="md-ellipsis">
+    Engineering
+  </span>
+        </a>
+      </li>
+    </ol>
+  </nav>
+              <article class="md-content__inner md-typeset">
+<h1 id="boardgame-rendering-reference">BoardGame Rendering Reference<a class="headerlink" href="#boardgame-rendering-reference" title="Permanent link">&para;</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Scope</p>
+<p>Source: <code>lib/src/game/board/board_game.dart</code>. This reference describes the
+checked-in implementation for the Pho Logic student portfolio project.</p>
+</div>
+<h2 id="role">Role<a class="headerlink" href="#role" title="Permanent link">&para;</a></h2>
+<p><code>BoardGame</code> is the Flame adapter around an authoritative <code>GridModel</code>. It owns visual components and interaction sequencing, but delegates match-3 policy to <code>BoardController</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Owns</th>
+<th>Delegates</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fixed-resolution camera and board geometry</td>
+<td>Swap validity and logical mutation</td>
+</tr>
+<tr>
+<td>Bed, tile, and blocker components</td>
+<td>Match and special creation</td>
+</tr>
+<tr>
+<td>Tap selection and input lock</td>
+<td>Gravity, refill, cascade, and shuffle</td>
+</tr>
+<tr>
+<td>Model-to-component synchronization</td>
+<td>Affected-cell computation</td>
+</tr>
+<tr>
+<td>Particle and special VFX dispatch</td>
+<td>Objective policy</td>
+</tr>
+<tr>
+<td>Clear/blocker callback wiring</td>
+<td>Persistence</td>
+</tr>
+</tbody>
+</table>
+<h2 id="construction">Construction<a class="headerlink" href="#construction" title="Permanent link">&para;</a></h2>
+<p>The constructor receives rows, columns, the grid/stage models, and the Flutter viewport dimensions. It configures a fixed-resolution camera and computes:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>tileSize = min(viewportWidth / columns, viewportHeight / rows)
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>gridLeft = (viewportWidth  - tileSize * columns) / 2
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>gridTop  = (viewportHeight - tileSize * rows) / 2
+</span></code></pre></div>
+<p>This centers the complete logical grid inside <code>BoardViewport</code>.</p>
+<p>The constructor builds lookup maps for stage beds and regular tiles, then registers special IDs that are not required in normal stage definitions:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">ID</th>
+<th>Asset</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;"><code>101</code></td>
+<td>Horizontal Party Popper</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>102</code></td>
+<td>Vertical Party Popper</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>103</code></td>
+<td>Sticky Rice Bomb</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>104</code></td>
+<td>Firecracker</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>105</code></td>
+<td>Dragon Fly</td>
+</tr>
+</tbody>
+</table>
+<p>It constructs <code>BoardController</code>, injects <code>SfxManager.instance</code>, assigns missing tile instance IDs, stabilizes the initial board, and installs clear/blocker callbacks.</p>
+<h2 id="component-registries">Component Registries<a class="headerlink" href="#component-registries" title="Permanent link">&para;</a></h2>
+<p><code>BoardGame</code> keeps identity and coordinate lookups separate:</p>
+<div class="language-dart highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">final</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">TileComponent</span><span class="o">&gt;</span><span class="w"> </span><span class="n">tilesByInstanceId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">final</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">Coord</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">instanceAtCoord</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kd">final</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">Coord</span><span class="o">&gt;</span><span class="w"> </span><span class="n">coordByInstanceId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kd">final</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">Coord</span><span class="p">,</span><span class="w"> </span><span class="n">BedComponent</span><span class="o">&gt;</span><span class="w"> </span><span class="n">bedComponents</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kd">final</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">Coord</span><span class="p">,</span><span class="w"> </span><span class="n">BlockerComponent</span><span class="o">&gt;</span><span class="w"> </span><span class="n">blockerComponents</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
+</span></code></pre></div>
+<h3 id="registry-invariants">Registry Invariants<a class="headerlink" href="#registry-invariants" title="Permanent link">&para;</a></h3>
+<p>For every model cell with a tile:</p>
+<ol>
+<li><code>tileInstanceId</code> is non-null.</li>
+<li><code>tilesByInstanceId[id]</code> exists.</li>
+<li><code>instanceAtCoord[coord] == id</code>.</li>
+<li><code>coordByInstanceId[id] == coord</code>.</li>
+</ol>
+<p>For every tile component, exactly one model cell should carry its instance ID.</p>
+<p>These maps allow a tile to move from coordinate A to B without destroying and recreating its component.</p>
+<h2 id="coordinate-conversion">Coordinate Conversion<a class="headerlink" href="#coordinate-conversion" title="Permanent link">&para;</a></h2>
+<p><code>coordToWorld()</code> maps a logical cell to the component center. <code>worldToCoord()</code> performs the inverse using the centered grid origin and tile size, then rejects values outside rows/columns or non-playable cells.</p>
+<p><code>BoardViewport</code> contains equivalent screen-to-board math for drag/drop boosters because the drag event originates in Flutter screen coordinates rather than Flame world coordinates.</p>
+<h2 id="load-lifecycle">Load Lifecycle<a class="headerlink" href="#load-lifecycle" title="Permanent link">&para;</a></h2>
+<p><code>onLoad()</code> loads the tile atlas and particle sprites, creates bed components
+for playable cells, creates blocker components where the model has blockers,
+and creates/registers tile components for every current tile.</p>
+<p>The game background is transparent because Flutter renders the gameplay
+background and board frame around the Flame viewport.</p>
+<h2 id="input-state">Input State<a class="headerlink" href="#input-state" title="Permanent link">&para;</a></h2>
+<p>The tap interaction has two local states:</p>
+<ul>
+<li>No selected tile: select the tapped playable tile.</li>
+<li>Selected tile: attempt an adjacent swap or move selection.</li>
+</ul>
+<p><code>_isBusy</code> guards the complete asynchronous transaction. It is set before
+<code>controller.attemptSwap()</code> and cleared in <code>finally</code>, ensuring exceptions do
+not permanently lock input.</p>
+<pre class="mermaid"><code>stateDiagram-v2
+    [*] --&gt; Idle
+    Idle --&gt; Selected: tap playable tile
+    Selected --&gt; Selected: tap non-adjacent tile
+    Selected --&gt; Busy: tap adjacent tile
+    Busy --&gt; Idle: transaction completes</code></pre>
+<p>Selection and booster hover reuse a component highlight, but drag hover does
+not replace the active swap-selection highlight.</p>
+<h2 id="controller-callbacks">Controller Callbacks<a class="headerlink" href="#controller-callbacks" title="Permanent link">&para;</a></h2>
+<h3 id="clear-callback">Clear Callback<a class="headerlink" href="#clear-callback" title="Permanent link">&para;</a></h3>
+<p><code>setOnCellsClearedWithTypes()</code> receives regular victims captured before model
+clearing. The callback:</p>
+<ol>
+<li>Filters coordinates whose VFX already owns the impact burst.</li>
+<li>Spawns object-specific particles for remaining victims.</li>
+<li>Removes used suppression markers.</li>
+<li>Forwards the map to <code>GameStateModel.processClearedTiles()</code>.</li>
+</ol>
+<p>An empty map is still safe to forward.</p>
+<h3 id="blocker-callbacks">Blocker Callbacks<a class="headerlink" href="#blocker-callbacks" title="Permanent link">&para;</a></h3>
+<p><code>setOnBlockerBreak()</code> awaits <code>BlockerBreakVfx.play()</code> against the registered
+component. <code>setOnBlockerCleared()</code> decrements the remaining blocker count in
+<code>GameStateModel</code>.</p>
+<h3 id="special-callback">Special Callback<a class="headerlink" href="#special-callback" title="Permanent link">&para;</a></h3>
+<p>The controller reports activated specials by coordinate plus effect metadata.
+Before dispatching VFX, <code>BoardGame</code>:</p>
+<ol>
+<li>Reads the current instance ID from <code>GridModel</code>.</li>
+<li>Confirms the component exists.</li>
+<li>Converts coordinate-keyed activation data to instance-keyed data.</li>
+<li>Converts target/affected-cell metadata.</li>
+<li>Awaits <code>SpecialVfxDispatcher.playSpecialVfx()</code>.</li>
+</ol>
+<p>Instance IDs protect VFX source lookup when coordinates move during a combo.</p>
+<h2 id="swap-orchestration">Swap Orchestration<a class="headerlink" href="#swap-orchestration" title="Permanent link">&para;</a></h2>
+<p><code>_processSwap(a, b)</code> calls <code>BoardController.attemptSwap()</code> with:</p>
+<ul>
+<li><code>chosenCoord = a</code>, the first selected tile.</li>
+<li><code>onSync</code>, which awaits <code>syncFromModel()</code> then <code>validateBoardSync()</code>.</li>
+<li><code>onNoMovesDetected</code>, forwarded from the Flutter gameplay screen.</li>
+<li><code>onSpecialActivated</code>, which dispatches the current VFX invocation
+  immediately.</li>
+</ul>
+<p>If the controller returns <code>true</code>, <code>GameStateModel.decrementMoves()</code> runs
+once. Invalid swaps do not spend a move.</p>
+<p>Combo steps call the special callback independently. The renderer must not
+accumulate them into one later batch because ordering is part of combo
+behavior.</p>
+<h2 id="model-synchronization">Model Synchronization<a class="headerlink" href="#model-synchronization" title="Permanent link">&para;</a></h2>
+<p><code>syncFromModel()</code> is the critical rendering algorithm:</p>
+<ol>
+<li>Snapshot every model coordinate and instance ID.</li>
+<li>Build new <code>instanceAtCoord</code> and <code>coordByInstanceId</code> maps.</li>
+<li>For each model tile, find or create its component by instance ID.</li>
+<li>Update sprite/type if the logical type changed.</li>
+<li>Animate an existing component from its old position to its new world
+   position.</li>
+<li>Remove components whose IDs are absent from the model snapshot.</li>
+<li>Replace coordinate maps with the new maps.</li>
+<li>Synchronize blocker components.</li>
+</ol>
+<p>Map replacement occurs after the snapshot is built so lookup users do not
+observe a partially migrated board.</p>
+<h2 id="defensive-validation">Defensive Validation<a class="headerlink" href="#defensive-validation" title="Permanent link">&para;</a></h2>
+<p><code>validateBoardSync()</code> checks:</p>
+<ul>
+<li>Every model tile has an instance ID.</li>
+<li>A component exists for that ID.</li>
+<li>Its tile type agrees with the model.</li>
+<li>Its registration maps agree with the model coordinate.</li>
+<li>No registered component is orphaned.</li>
+</ul>
+<p>It can recreate missing components, update mismatched sprites, and remove
+orphans. Treat a repair as evidence of an upstream invariant violation;
+diagnostics should identify the mutation path rather than relying permanently
+on repair.</p>
+<h2 id="particle-strategy">Particle Strategy<a class="headerlink" href="#particle-strategy" title="Permanent link">&para;</a></h2>
+<p>Particle sprite mappings are loaded by regular tile ID. The generic clear
+callback uses those mappings to make food-specific debris. A clear larger than
+eight victims uses reduced particle complexity to limit visual and allocation
+pressure.</p>
+<p>Three sets coordinate special timing:</p>
+<table>
+<thead>
+<tr>
+<th>Set</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dragon Fly targets</td>
+<td>Marks coordinates receiving Dragon Fly treatment</td>
+</tr>
+<tr>
+<td>Special-clear coordinates</td>
+<td>Marks cells cleared by special logic</td>
+</tr>
+<tr>
+<td>Suppressed auto bursts</td>
+<td>Prevents duplicate generic particles when a VFX emits impact particles</td>
+</tr>
+</tbody>
+</table>
+<p>Markers must be removed when the effect completes or the affected cells clear.</p>
+<h2 id="direct-vfx-clears">Direct VFX Clears<a class="headerlink" href="#direct-vfx-clears" title="Permanent link">&para;</a></h2>
+<p><code>clearTilesAtCoords()</code> is available to VFX whose visual impact defines the
+correct clear time, notably Party Popper projectiles and Firecracker. It routes
+through the controller's clear/event behavior rather than mutating components
+alone.</p>
+<p>VFX should never delete a <code>TileComponent</code> as the sole state change. Logical
+model mutation must remain authoritative, followed by synchronization.</p>
+<h2 id="blocker-synchronization">Blocker Synchronization<a class="headerlink" href="#blocker-synchronization" title="Permanent link">&para;</a></h2>
+<p><code>_syncBlockersFromModel()</code> compares blocker model state with
+<code>blockerComponents</code>:</p>
+<ul>
+<li>Add a component when a model blocker has no visual.</li>
+<li>Keep the registered component while the blocker exists.</li>
+<li>Remove a component when no blocker remains.</li>
+</ul>
+<p>The break animation runs through the controller callback before final
+component cleanup.</p>
+<h2 id="change-checklist">Change Checklist<a class="headerlink" href="#change-checklist" title="Permanent link">&para;</a></h2>
+<p>Before adding a rendering feature:</p>
+<ol>
+<li>Identify the authoritative model field.</li>
+<li>Decide whether the feature follows a tile identity or a coordinate.</li>
+<li>Preserve instance IDs across moves.</li>
+<li>Add any temporary marker with an explicit cleanup path.</li>
+<li>Route logical clearing through the controller.</li>
+<li>Await VFX that controls rule timing.</li>
+<li>Run synchronization after mutation boundaries.</li>
+<li>Confirm component registries remain bijective.</li>
+<li>Verify input stays locked for the complete transaction.</li>
+<li>Test void, edge, blocker, special, and combo cases.</li>
+</ol>
+<h2 id="common-failure-modes">Common Failure Modes<a class="headerlink" href="#common-failure-modes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wrong tile animates</td>
+<td>Coordinate used as identity instead of instance ID</td>
+</tr>
+<tr>
+<td>Duplicate tile sprite</td>
+<td>Old component not removed or instance ID duplicated</td>
+</tr>
+<tr>
+<td>Objective misses a VFX clear</td>
+<td>Direct visual removal bypassed controller clear event</td>
+</tr>
+<tr>
+<td>Double particle burst</td>
+<td>Suppression marker missing or removed too early</td>
+</tr>
+<tr>
+<td>Tap accepted during cascade</td>
+<td>Busy guard released before controller returns</td>
+</tr>
+<tr>
+<td>Blocker visual remains</td>
+<td>Model clear did not reach blocker synchronization</td>
+</tr>
+<tr>
+<td>VFX source disappears early</td>
+<td>Logical clear occurred before source animation captured its component</td>
+</tr>
+</tbody>
+</table>
+<h2 id="recommended-tests">Recommended Tests<a class="headerlink" href="#recommended-tests" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Construct a small grid and assert coordinate/world round trips.</li>
+<li>Move multiple instance IDs in one sync and verify registry inverses.</li>
+<li>Change a tile from regular to special while preserving its component.</li>
+<li>Remove/refill a tile and verify old/new instance ownership.</li>
+<li>Clear through each VFX path and assert one objective event.</li>
+<li>Break a blocker and verify callback order and component cleanup.</li>
+<li>Force an exception during a swap and verify the busy flag releases.</li>
+</ul>
+<p>Related references:</p>
+<ul>
+<li><a href="board-game.html">Board engine guide</a></li>
+<li><a href="board-controller.html">BoardController rule engine</a></li>
+<li><a href="architecture.html">System architecture</a></li>
+</ul>
+              </article>
+            </div>
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+      </main>
+        <footer class="md-footer">
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 CuongTModwork. Student portfolio project.
+    </div>
+</div>
+<div class="md-social">
+    <a href="https://play.google.com/store/apps/details?id=com.cuongtmodwork.phologic" target="_blank" rel="noopener" title="Pho Logic on Google Play" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M293.6 234.3 72.9 13l280.8 161.2zM15.3 0C2.3 6.8-6.4 19.2-6.4 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256zm425.2 225.6-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8M72.9 499l280.8-161.2-60.1-60.1z"/></svg>
+    </a>
+    <a href="https://github.com/CuongMe/pho_logic_mvp" target="_blank" rel="noopener" title="Pho Logic source repository" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+</div>
+    </div>
+  </div>
+</footer>
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.tracking", "navigation.path", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tooltips", "content.tabs.link"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
+        <script src="assets/javascripts/audio-demos.js"></script>
+  </body>
+</html>

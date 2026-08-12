@@ -1,813 +1,1280 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Documentation — Phở Logic</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-</head>
-<body class="documentation">
-  <header class="site-header">
-    <div class="header-content">
-      <a class="brand" href="index.html">
-        <img class="brand-logo" src="images/app_launcher_icon.png" alt="Phở Logic logo" />
-        <div class="brand-text">
-          <span class="brand-title">Phở Logic</span>
-          <span class="brand-tag">colorful puzzle game</span>
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="description" content="An engineering tour of Pho Logic's Flutter and Flame architecture, data flow, board rules, rendering, and known constraints.">
+        <meta name="author" content="CuongTModwork">
+        <link rel="canonical" href="https://cuongme.github.io/pho_logic_mvp/documentation.html">
+        <link rel="prev" href="gdd.html">
+        <link rel="next" href="architecture.html">
+      <link rel="icon" href="assets/images/app_launcher_icon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+        <title>Technical Overview - Pho Logic</title>
+      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      <link rel="stylesheet" href="assets/stylesheets/extra.css">
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+  </head>
+    <body dir="ltr" data-md-color-scheme="phologic-light" data-md-color-primary="custom" data-md-color-accent="custom">
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+        <a href="#technical-overview" class="md-skip">
+          Skip to content
+        </a>
+    </div>
+    <div data-md-component="announce">
+    </div>
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="Pho Logic" class="md-header__button md-logo" aria-label="Pho Logic" data-md-component="logo">
+  <img src="assets/images/app_launcher_icon.png" alt="logo">
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Pho Logic
+          </span>
         </div>
-      </a>
-      <nav class="nav-links" aria-label="Primary">
-        <a href="index.html">Home/Privacy</a>
-        <a href="documentation.html" aria-current="page">Documentation</a>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+              Technical Overview
+          </span>
+        </div>
+      </div>
+    </div>
+        <label class="md-header__button md-icon" for="__search">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
       </nav>
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
     </div>
-  </header>
-
-  <main>
-    <div class="page-header">
-      <div class="page-header-content">
-        <p class="eyebrow">How I built it</p>
-        <h1>Documentation Overview</h1>
-        <p class="page-lede">Explore the design, architecture, and development process behind Phở Logic.</p>
+  </div>
+</div>
+      <div class="md-header__source">
+        <a href="https://github.com/CuongMe/pho_logic_mvp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CuongMe/pho_logic_mvp
+  </div>
+</a>
       </div>
+  </nav>
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+    <li class="md-tabs__item">
+      <a href="index.html" class="md-tabs__link">
+  Home / Privacy
+      </a>
+    </li>
+    <li class="md-tabs__item">
+      <a href="gdd.html" class="md-tabs__link">
+  Game Design
+      </a>
+    </li>
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="documentation.html" class="md-tabs__link">
+  Engineering
+        </a>
+      </li>
+    </ul>
+  </div>
+</nav>
+</header>
+    <div class="md-container" data-md-component="container">
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="Pho Logic" class="md-nav__button md-logo" aria-label="Pho Logic" data-md-component="logo">
+  <img src="assets/images/app_launcher_icon.png" alt="logo">
+    </a>
+    Pho Logic
+  </label>
+    <div class="md-nav__source">
+      <a href="https://github.com/CuongMe/pho_logic_mvp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CuongMe/pho_logic_mvp
+  </div>
+</a>
     </div>
+  <ul class="md-nav__list" data-md-scrollfix>
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Home / Privacy
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="gdd.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Game Design
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+  <span class="md-ellipsis">
+    Engineering
+  </span>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+    Engineering
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+    <li class="md-nav__item md-nav__item--active">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+  <span class="md-ellipsis">
+    Technical Overview
+  </span>
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      <a href="documentation.html" class="md-nav__link md-nav__link--active">
+  <span class="md-ellipsis">
+    Technical Overview
+  </span>
+      </a>
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+        <li class="md-nav__item">
+  <a href="#executive-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+        Executive Summary
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#technology-and-dependency-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+        Technology and Dependency Surface
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#repository-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+        Repository Boundaries
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#startup-and-screen-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+        Startup and Screen Flow
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#json-authored-presentation" class="md-nav__link">
+    <span class="md-ellipsis">
+        JSON-authored Presentation
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#stage-data-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+        Stage Data Pipeline
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#logical-board-model" class="md-nav__link">
+    <span class="md-ellipsis">
+        Logical Board Model
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Logical Board Model">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#core-invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+        Core Invariants
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#turn-transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+        Turn Transaction
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Turn Transaction">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#match-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+        Match Detection
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#clear-gravity-and-refill" class="md-nav__link">
+    <span class="md-ellipsis">
+        Clear, Gravity, and Refill
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#special-system" class="md-nav__link">
+    <span class="md-ellipsis">
+        Special System
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#flame-rendering-and-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Flame Rendering and Synchronization
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Flame Rendering and Synchronization">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#clear-and-vfx-timing" class="md-nav__link">
+    <span class="md-ellipsis">
+        Clear and VFX Timing
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#objectives-and-blockers" class="md-nav__link">
+    <span class="md-ellipsis">
+        Objectives and Blockers
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#inventory-and-persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+        Inventory and Persistence
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#audio" class="md-nav__link">
+    <span class="md-ellipsis">
+        Audio
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#implemented-performance-measures" class="md-nav__link">
+    <span class="md-ellipsis">
+        Implemented Performance Measures
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#failure-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+        Failure Handling
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#testing-and-verification-status" class="md-nav__link">
+    <span class="md-ellipsis">
+        Testing and Verification Status
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#known-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+        Known Constraints
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#advertising-learning-exercise" class="md-nav__link">
+    <span class="md-ellipsis">
+        Advertising Learning Exercise
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#engineering-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+        Engineering Takeaways
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#continue-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+        Continue Reading
+    </span>
+  </a>
+</li>
+    </ul>
+</nav>
+    </li>
+    <li class="md-nav__item">
+      <a href="architecture.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    System Architecture
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="board-game.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    Board Engine Guide
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="board-game-rendering.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    BoardGame Rendering
+  </span>
+      </a>
+    </li>
+    <li class="md-nav__item">
+      <a href="board-controller.html" class="md-nav__link">
+  <span class="md-ellipsis">
+    BoardController Rules
+  </span>
+      </a>
+    </li>
+          </ul>
+        </nav>
+    </li>
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+        <li class="md-nav__item">
+  <a href="#executive-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+        Executive Summary
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#technology-and-dependency-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+        Technology and Dependency Surface
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#repository-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+        Repository Boundaries
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#startup-and-screen-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+        Startup and Screen Flow
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#json-authored-presentation" class="md-nav__link">
+    <span class="md-ellipsis">
+        JSON-authored Presentation
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#stage-data-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+        Stage Data Pipeline
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#logical-board-model" class="md-nav__link">
+    <span class="md-ellipsis">
+        Logical Board Model
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Logical Board Model">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#core-invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+        Core Invariants
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#turn-transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+        Turn Transaction
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Turn Transaction">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#match-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+        Match Detection
+    </span>
+  </a>
+</li>
+          <li class="md-nav__item">
+  <a href="#clear-gravity-and-refill" class="md-nav__link">
+    <span class="md-ellipsis">
+        Clear, Gravity, and Refill
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#special-system" class="md-nav__link">
+    <span class="md-ellipsis">
+        Special System
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#flame-rendering-and-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+        Flame Rendering and Synchronization
+    </span>
+  </a>
+    <nav class="md-nav" aria-label="Flame Rendering and Synchronization">
+      <ul class="md-nav__list">
+          <li class="md-nav__item">
+  <a href="#clear-and-vfx-timing" class="md-nav__link">
+    <span class="md-ellipsis">
+        Clear and VFX Timing
+    </span>
+  </a>
+</li>
+      </ul>
+    </nav>
+</li>
+        <li class="md-nav__item">
+  <a href="#objectives-and-blockers" class="md-nav__link">
+    <span class="md-ellipsis">
+        Objectives and Blockers
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#inventory-and-persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+        Inventory and Persistence
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#audio" class="md-nav__link">
+    <span class="md-ellipsis">
+        Audio
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#implemented-performance-measures" class="md-nav__link">
+    <span class="md-ellipsis">
+        Implemented Performance Measures
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#failure-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+        Failure Handling
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#testing-and-verification-status" class="md-nav__link">
+    <span class="md-ellipsis">
+        Testing and Verification Status
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#known-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+        Known Constraints
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#advertising-learning-exercise" class="md-nav__link">
+    <span class="md-ellipsis">
+        Advertising Learning Exercise
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#engineering-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+        Engineering Takeaways
+    </span>
+  </a>
+</li>
+        <li class="md-nav__item">
+  <a href="#continue-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+        Continue Reading
+    </span>
+  </a>
+</li>
+    </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            <div class="md-content" data-md-component="content">
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+    <li class="md-path__item">
+      <a href="index.html" class="md-path__link">
+  <span class="md-ellipsis">
+    Home / Privacy
+  </span>
+      </a>
+    </li>
+      <li class="md-path__item">
+        <a href="documentation.html" class="md-path__link">
+  <span class="md-ellipsis">
+    Engineering
+  </span>
+        </a>
+      </li>
+    </ol>
+  </nav>
+              <article class="md-content__inner md-typeset">
+<h1 id="technical-overview">Technical Overview<a class="headerlink" href="#technical-overview" title="Permanent link">&para;</a></h1>
+<p class="section-kicker">Code-traceable engineering narrative</p>
+<p>This page explains how Pho Logic turns stage data and player input into a
+stable, animated match-3 board. It focuses on the architectural choices that
+carry the most risk: logical/render state separation, asynchronous turn
+ordering, special-effect timing, data-authored content, and local persistence.</p>
+<div class="admonition important">
+<p class="admonition-title">Scope</p>
+<p>Pho Logic is a student portfolio project. The description below is based
+on version <code>1.0.0+6</code> in the repository. Platform wrapper directories show
+intended Flutter targets; they do not prove that every target has passed a
+release qualification process.</p>
+</div>
+<div class="doc-actions">
+  <a class="md-button md-button--primary" href="architecture.html">Full architecture reference</a>
+  <a class="md-button" href="gdd.html">Game Design Document</a>
+  <a class="md-button" href="https://github.com/CuongMe/pho_logic_mvp">Source repository</a>
+</div>
+<h2 id="executive-summary">Executive Summary<a class="headerlink" href="#executive-summary" title="Permanent link">&para;</a></h2>
+<p>Pho Logic uses a hybrid Flutter/Flame architecture:</p>
+<ul>
+<li><strong>Flutter</strong> owns application startup, routing, screen layout, HUD state,
+  dialogs, settings, inventory gestures, and safe-area scaling.</li>
+<li><strong>Flame</strong> owns the embedded board scene, tile components, movement,
+  selection feedback, particles, and special VFX.</li>
+<li><strong>Pure Dart models and services</strong> own the logical grid, swaps, matches,
+  special rules, gravity, refill, objective progress, and persistence.</li>
+</ul>
+<p>The central rule is that <code>GridModel</code> is authoritative. Rendering is a
+projection. A tile's logical coordinate can change many times during one turn,
+so <code>tileInstanceId</code> preserves identity while Flame animates an existing
+component to its new location.</p>
+<pre class="mermaid"><code>flowchart TB
+    subgraph Content
+      Stage[Stage JSON]
+      Layout[Layout JSON]
+      Tuning[SFX tuning JSON]
+    end
 
-    <!-- Introduction Section -->
-    <section class="documentation-section intro-section" id="introduction">
-      <div class="section-header">
-        <h2>Introduction</h2>
-        <p class="section-tag">Overview and context</p>
-      </div>
-      <div class="section-content intro-content">
-        <div class="intro-logo">
-          <img src="images/menu_logo.png" alt="Phở Logic logo" />
+    subgraph Flutter
+      Screens[Menu / World / Gameplay]
+      State[GameStateModel]
+      Inventory[InventoryModel]
+      Viewport[BoardViewport]
+    end
+
+    subgraph Flame
+      Game[BoardGame]
+      Components[Tile / Bed / Blocker components]
+      VFX[Special and particle VFX]
+    end
+
+    subgraph Rules
+      Grid[GridModel]
+      Controller[BoardController]
+      Resolvers[Special spawner / activation / combo]
+    end
+
+    Stage --&gt; Grid
+    Layout --&gt; Screens
+    Tuning --&gt; Game
+    Screens --&gt; Viewport
+    Viewport --&gt; Game
+    Game --&gt; Controller
+    Controller --&gt; Grid
+    Controller --&gt; Resolvers
+    Grid --&gt; Game
+    Game --&gt; Components
+    Game --&gt; VFX
+    Game --&gt; State
+    Inventory --&gt; Viewport</code></pre>
+<h2 id="technology-and-dependency-surface">Technology and Dependency Surface<a class="headerlink" href="#technology-and-dependency-surface" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Repository role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Language/runtime</td>
+<td>Dart <code>&gt;=3.0.0 &lt;4.0.0</code></td>
+<td>Application, rules, and tooling language</td>
+</tr>
+<tr>
+<td>UI framework</td>
+<td>Flutter</td>
+<td>Screens, layout, dialogs, routing, and platform shell</td>
+</tr>
+<tr>
+<td>Game engine</td>
+<td>Flame <code>^1.22.1</code></td>
+<td>Board scene, components, callbacks, and effects</td>
+</tr>
+<tr>
+<td>Short SFX</td>
+<td><code>flame_audio</code></td>
+<td>Pooled event sounds</td>
+</tr>
+<tr>
+<td>BGM</td>
+<td><code>audioplayers</code></td>
+<td>Looping background tracks</td>
+</tr>
+<tr>
+<td>Local state</td>
+<td><code>shared_preferences</code></td>
+<td>Inventory, results, language, and cooldown</td>
+</tr>
+<tr>
+<td>External actions</td>
+<td><code>url_launcher</code></td>
+<td>Optional Google Forms feedback</td>
+</tr>
+<tr>
+<td>Logging</td>
+<td><code>logger</code> plus project wrappers</td>
+<td>Debug diagnostics</td>
+</tr>
+<tr>
+<td>Windows packaging</td>
+<td><code>msix</code></td>
+<td>MSIX configuration</td>
+</tr>
+</tbody>
+</table>
+<p>No backend client, account SDK, cloud database, analytics SDK, dependency
+injection framework, or Google Mobile Ads package is declared in the current
+<code>pubspec.yaml</code>.</p>
+<h2 id="repository-boundaries">Repository Boundaries<a class="headerlink" href="#repository-boundaries" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>lib/src/
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|-- app/                 MaterialApp and routes
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|-- audio/               Global BGM and SFX managers
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|-- game/
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>|   |-- board/           Rule orchestration, board rendering, and special logic
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>|   |-- inventory/       Booster data and persistence
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>|   |-- model/           Grid, cell, coordinate, and match records
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>|   |-- progress/        Latest stage result
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>|   |-- stages/          Parse, build, and validate stage data
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>|   |-- utils/           Weighted picking and debug logging
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>|   `-- vfx/             Effect-specific Flame sequences
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>|-- screens/             Menu, world, gameplay, help, settings, and modals
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>|-- utils/               JSON/layout helpers and cooldown
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>`-- widgets/             Reusable Flutter UI
+</span></code></pre></div>
+<p>This organization follows runtime ownership rather than framework type alone.
+For example, <code>BoardGame</code> lives with game-board code even though it is a Flame
+class, while <code>BoardViewport</code> lives with gameplay screens because it bridges
+Flutter layout and Flame input coordinates.</p>
+<h2 id="startup-and-screen-flow">Startup and Screen Flow<a class="headerlink" href="#startup-and-screen-flow" title="Permanent link">&para;</a></h2>
+<p><code>main.dart</code> initializes Flutter, applies a mobile-only orientation lock,
+initializes both audio managers, and runs <code>PhoLogicApp</code>. The app installs a
+global navigator key and a pointer listener used to retry browser BGM after a
+user gesture.</p>
+<p><code>Routes.getRoutes()</code> registers the menu, one world map, and 25 generated
+gameplay paths:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>/menu
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>/world/1
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>/gameplay/1 ... /gameplay/25
+</span></code></pre></div>
+<p>The gameplay route owns a new session. It loads the shared gameplay-layout JSON
+and the selected stage JSON, creates <code>GameStateModel</code>, embeds
+<code>BoardViewport</code>, and listens for derived win/loss changes.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Player
+    participant Screen as GameplayScreen1
+    participant Loader as StageLoader
+    participant Viewport as BoardViewport
+    participant Game as BoardGame
+    participant Rules as BoardController
+
+    Player-&gt;&gt;Screen: Open stage N
+    Screen-&gt;&gt;Loader: Load stage_NNN.json
+    Loader--&gt;&gt;Screen: StageData
+    Screen-&gt;&gt;Viewport: Data + HUD state + scaled rectangle
+    Viewport-&gt;&gt;Game: Construct with GridModel
+    Game-&gt;&gt;Rules: Construct and attach callbacks
+    Game-&gt;&gt;Rules: Assign instance IDs and stabilize
+    Game--&gt;&gt;Player: Render interactive board</code></pre>
+<h2 id="json-authored-presentation">JSON-authored Presentation<a class="headerlink" href="#json-authored-presentation" title="Permanent link">&para;</a></h2>
+<p>Menu, world, and gameplay layouts share a 1080x1920 design coordinate space.
+For each screen:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>scale = min(usableWidth / 1080, usableHeight / 1920)
+</span></code></pre></div>
+<p>The scaled design is centered in the safe area. Web scale is capped at
+<code>1.0</code>. Position and size values remain in the authoring coordinate space and
+are transformed into screen pixels at build time.</p>
+<p>Gameplay defines a separate board rectangle:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;gridRect&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">&quot;x&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">120</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="nt">&quot;y&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">325</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="nt">&quot;w&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">850</span><span class="p">,</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="nt">&quot;h&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1260</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><code>BoardViewport</code> occupies that rectangle. <code>BoardGame</code> then computes tile
+size using the smaller of viewport-width-per-column and
+viewport-height-per-row, ensuring that the complete 8x7 grid fits.</p>
+<p><strong>Trade-off:</strong> contain scaling preserves the original composition and avoids
+per-device hardcoding, but very different aspect ratios can produce unused
+space. JSON also moves some errors from compile time to runtime.</p>
+<div class="media-grid">
+  <figure>
+    <img src="assets/images/gameplay.png" alt="Complete gameplay screen">
+    <figcaption>Flutter HUD composition around the Flame board viewport.</figcaption>
+  </figure>
+  <figure>
+    <img src="assets/images/world_finish.png" alt="World map screen">
+    <figcaption>Five-lantern page composition in the world screen.</figcaption>
+  </figure>
+  <figure>
+    <img src="assets/images/animation_system.png" alt="Animation system diagram">
+    <figcaption>Portfolio diagram supporting the VFX implementation narrative.</figcaption>
+  </figure>
+</div>
+<h2 id="stage-data-pipeline">Stage Data Pipeline<a class="headerlink" href="#stage-data-pipeline" title="Permanent link">&para;</a></h2>
+<p>Every current stage is an 8x7 JSON file with:</p>
+<ul>
+<li>Regular tile definitions and spawn weights.</li>
+<li>Bed types and <code>bedMap</code>.</li>
+<li>Optional blocker definitions.</li>
+<li><code>tileMap</code> initial content.</li>
+<li>Move budget and collection objectives.</li>
+<li><code>allowInitialMatches</code>.</li>
+</ul>
+<p>The current sentinel values are <code>0</code> weighted spawn, <code>-1</code> void, <code>-2</code>
+scooter blocker, and positive fixed tile IDs.</p>
+<pre class="mermaid"><code>flowchart LR
+    File[stage_XXX.json] --&gt; Parse[StageData.fromJson]
+    Parse --&gt; Resolve[StageLoader resolves weighted cells]
+    Resolve --&gt; Build[StageBuilder creates BoardState]
+    Build --&gt; Grid[GridModel creates Cells]</code></pre>
+<p><code>StageValidator</code> checks dimensions, references, and weights, but the runtime
+load path does not call it. <code>StageLoader</code> and <code>StageBuilder</code> also both own
+weighted-spawn logic. Consolidating those responsibilities would make
+initial-match prevention and validation easier to reason about.</p>
+<h2 id="logical-board-model">Logical Board Model<a class="headerlink" href="#logical-board-model" title="Permanent link">&para;</a></h2>
+<p><code>GridModel</code> contains a matrix of <code>Cell</code> objects. A cell can carry a regular
+or special type ID, a stable instance ID, a bed ID, and blocker state.
+<code>Coord(row, col)</code> is immutable and acts as the common key between rules,
+rendering, VFX, and objective events.</p>
+<h3 id="core-invariants">Core Invariants<a class="headerlink" href="#core-invariants" title="Permanent link">&para;</a></h3>
+<ol>
+<li>A cell with <code>bedId == -1</code> is outside play.</li>
+<li>A blocker occupies its own cell, rejects swaps, and divides gravity.</li>
+<li>Regular tile IDs are below <code>101</code>; special IDs are <code>101..105</code>.</li>
+<li>Refill creates only regular tiles.</li>
+<li>A moved tile preserves <code>tileInstanceId</code>.</li>
+<li>A newly refilled tile receives a new instance ID.</li>
+<li>Rendering registries must converge to the model after each sync.</li>
+</ol>
+<p>These invariants matter because one turn can mutate many coordinates before
+animation completes. Identity-by-coordinate would be ambiguous during swaps
+and gravity.</p>
+<h2 id="turn-transaction">Turn Transaction<a class="headerlink" href="#turn-transaction" title="Permanent link">&para;</a></h2>
+<p><code>BoardGame</code> accepts two adjacent taps and delegates to
+<code>BoardController.attemptSwap()</code>. A busy flag blocks overlapping input until
+the transaction returns.</p>
+<pre class="mermaid"><code>flowchart TD
+    Input[Adjacent pair] --&gt; Guard{Playable, tiled, unblocked?}
+    Guard -- no --&gt; Reject[Reject]
+    Guard -- yes --&gt; Swap[Swap model cells]
+    Swap --&gt; Sync1[Animate model positions]
+    Sync1 --&gt; Valid{Line, 2x2, or special?}
+    Valid -- no --&gt; Undo[Swap back and animate]
+    Valid -- yes --&gt; Resolve[Resolve clears and specials]
+    Resolve --&gt; Gravity[Gravity]
+    Gravity --&gt; Refill[Weighted regular refill]
+    Refill --&gt; Cascade{Another line or 2x2?}
+    Cascade -- yes --&gt; Resolve
+    Cascade -- no --&gt; Solvable{Legal move or special exists?}
+    Solvable -- no --&gt; Shuffle[Shuffle and sync]
+    Solvable -- yes --&gt; Move[Consume one move]
+    Shuffle --&gt; Move</code></pre>
+<p>The controller calls an asynchronous <code>onSync</code> callback after mutation
+boundaries. <code>BoardGame</code> uses it to run <code>syncFromModel()</code> and then
+<code>validateBoardSync()</code>. This creates a transaction-like rhythm without
+coupling the rule engine to Flame classes.</p>
+<h3 id="match-detection">Match Detection<a class="headerlink" href="#match-detection" title="Permanent link">&para;</a></h3>
+<p>Line detection scans regular tiles horizontally and vertically. It ignores
+voids, blockers, empty cells, and special IDs. A simulated validity check
+accepts a swap that creates a line, a same-type regular 2x2 around the swap, or
+includes a special.</p>
+<h3 id="clear-gravity-and-refill">Clear, Gravity, and Refill<a class="headerlink" href="#clear-gravity-and-refill" title="Permanent link">&para;</a></h3>
+<p>Before clearing, the controller captures <code>coord -&gt; regular tile type</code>. That
+event supports both objective progress and object-specific particles after
+the model cells have been emptied.</p>
+<p>Gravity works in vertical segments. A blocker stops traversal, so a tile above
+it never falls through to the segment below. Refill fills only empty,
+playable, non-blocker cells from stage-authored regular weights.</p>
+<p>The cascade loop has a 10-pass safety cap. When stable, the board shuffles only
+if it has no possible move and no special tile.</p>
+<h2 id="special-system">Special System<a class="headerlink" href="#special-system" title="Permanent link">&para;</a></h2>
+<p>Special behavior is divided into three policies:</p>
+<ol>
+<li><code>SpecialTileSpawner</code> recognizes creation patterns and chooses spawn cells.</li>
+<li><code>SpecialActivationResolver</code> computes a normal swap activation.</li>
+<li><code>SpecialComboResolver</code> expands a special-to-special pair into ordered
+   steps.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">ID</th>
+<th>Created by</th>
+<th>Logical effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;"><code>101</code></td>
+<td>Four horizontal</td>
+<td>Playable row</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>102</code></td>
+<td>Four vertical</td>
+<td>Playable column</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>103</code></td>
+<td>Five straight</td>
+<td>All regular tiles matching its swap partner</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>104</code></td>
+<td>T/L union of 5 or 6</td>
+<td>Centered playable 3x3</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>105</code></td>
+<td>Same-type regular 2x2</td>
+<td>Swap partner plus one deterministic target and source cleanup</td>
+</tr>
+</tbody>
+</table>
+<p>Candidates are sorted Sticky Rice, Firecracker, Dragon Fly, then Party Popper.
+The spawner greedily accepts non-overlapping patterns and protects each
+accepted spawn coordinate from the clear set.</p>
+<p>The combo resolver does not simply union two effects. It returns ordered
+<code>ComboStep</code> records, allowing color clears, pre-hits, row/column clears, and
+3x3 effects to run in a defined sequence. The <a href="gdd.html#special-combinations">GDD combination matrix</a>
+records every current pair.</p>
+<div class="media-grid special-power-grid">
+  <figure>
+    <img src="assets/gif/horizontal_party_popper.gif" alt="Horizontal Party Popper row effect" loading="lazy">
+    <figcaption>Horizontal Party Popper uses projectile timing for row-clear feedback.</figcaption>
+  </figure>
+  <figure>
+    <img src="assets/gif/sticky_rice_bomb.gif" alt="Sticky Rice Bomb color clear effect" loading="lazy">
+    <figcaption>Sticky Rice Bomb clears every regular tile of the selected partner type.</figcaption>
+  </figure>
+  <figure>
+    <img src="assets/gif/firecracker.gif" alt="Firecracker 3x3 effect" loading="lazy">
+    <figcaption>Firecracker owns the visible centered 3x3 impact.</figcaption>
+  </figure>
+  <figure>
+    <img src="assets/gif/dragon_fly.gif" alt="Dragon Fly targeting effect" loading="lazy">
+    <figcaption>Dragon Fly target metadata keeps flight and logical clearing aligned.</figcaption>
+  </figure>
+</div>
+<h2 id="flame-rendering-and-synchronization">Flame Rendering and Synchronization<a class="headerlink" href="#flame-rendering-and-synchronization" title="Permanent link">&para;</a></h2>
+<p><code>BoardGame</code> extends <code>FlameGame</code> with tap callbacks and a fixed-resolution
+camera matching the Flutter viewport. It owns:</p>
+<table>
+<thead>
+<tr>
+<th>Registry</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tilesByInstanceId</code></td>
+<td>Stable identity to tile component</td>
+</tr>
+<tr>
+<td><code>instanceAtCoord</code></td>
+<td>Current coordinate to instance</td>
+</tr>
+<tr>
+<td><code>coordByInstanceId</code></td>
+<td>Instance to current coordinate</td>
+</tr>
+<tr>
+<td><code>bedComponents</code></td>
+<td>Static bed component by cell</td>
+</tr>
+<tr>
+<td><code>blockerComponents</code></td>
+<td>Scooter component by cell</td>
+</tr>
+</tbody>
+</table>
+<p><code>syncFromModel()</code> builds replacement coordinate maps, animates existing
+components whose instance IDs moved, updates sprite types, creates missing
+components, and removes orphans. It replaces the coordinate maps as a unit.</p>
+<p><code>validateBoardSync()</code> is a defensive repair pass. It is valuable while the
+prototype evolves, but repeated repair should not substitute for proving each
+mutation preserves the registry invariants.</p>
+<h3 id="clear-and-vfx-timing">Clear and VFX Timing<a class="headerlink" href="#clear-and-vfx-timing" title="Permanent link">&para;</a></h3>
+<p>VFX ownership differs by effect:</p>
+<ul>
+<li>Party Popper and Firecracker clear cells at exact impact times by calling
+  back into <code>BoardGame.clearTilesAtCoords()</code>.</li>
+<li>Sticky Rice and Dragon Fly animate using target metadata, then the
+  controller completes their logical clear path.</li>
+<li>A suppression set prevents automatic burst particles where the special VFX
+  already emitted an impact.</li>
+<li>Specials caught in another special's affected set are removed without
+  recursively starting another VFX.</li>
+</ul>
+<p>This design avoids uncontrolled overlapping animations, but it also means the
+game does not implement general special-chain propagation.</p>
+<h2 id="objectives-and-blockers">Objectives and Blockers<a class="headerlink" href="#objectives-and-blockers" title="Permanent link">&para;</a></h2>
+<p><code>GameStateModel</code> owns moves, collection progress, initial/remaining blocker
+counts, and derived terminal states.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>won  = all collection objectives complete
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>       AND (no initial blockers OR blockers remaining == 0)
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>lost = moves remaining &lt;= 0 AND not won
+</span></code></pre></div>
+<p>Only captured regular victim IDs update collection progress. Special IDs are
+filtered out.</p>
+<p>A scooter blocker:</p>
+<ul>
+<li>Rejects swaps.</li>
+<li>Occupies a cell without a tile.</li>
+<li>Stops gravity across its position.</li>
+<li>Breaks from an adjacent regular-match clear.</li>
+<li>Does not currently break from a special clear.</li>
+<li>Must be removed to win any stage that started with scooters.</li>
+</ul>
+<p>The blocker-break callback plays an exit animation before the controller
+removes the pending blocker and decrements game-state count.</p>
+<h2 id="inventory-and-persistence">Inventory and Persistence<a class="headerlink" href="#inventory-and-persistence" title="Permanent link">&para;</a></h2>
+<p><code>InventoryRepository</code> stores a JSON map of special ID to count under
+<code>player_inventory_v4</code>. Defaults are zero. A booster drag can replace a
+playable regular tile with its special ID; the inventory then spends one item
+and the board synchronizes.</p>
+<div class="admonition warning">
+<p class="admonition-title">Non-atomic booster transaction</p>
+<p>Placement currently occurs before the asynchronous inventory spend. If
+spending fails, the code logs an error but does not restore the original
+tile. A production-quality implementation should reserve/spend first or
+model placement and spend as one rollback-capable operation.</p>
+</div>
+<p>Stage progress stores the latest <code>cleared</code> or <code>lose</code> result by stage.
+Language and the 45-second free-boost timestamp also use local preferences.
+There is no first-party account or cloud synchronization layer.</p>
+<h2 id="audio">Audio<a class="headerlink" href="#audio" title="Permanent link">&para;</a></h2>
+<p><code>SfxManager</code> uses Flame <code>AudioPool</code> for low-latency event sounds and reads
+per-sound settings from <code>assets/audio/sfx_tuning.json</code>. <code>BgmManager</code> uses
+<code>audioplayers</code> for looping menu, gameplay, and festival tracks.</p>
+<p>Browser autoplay can reject BGM startup. Instead of treating that as a fatal
+error, the manager retains a pending request and retries after the app-level
+pointer listener observes user interaction.</p>
+<p>Global singleton managers are pragmatic at this project size. The trade-off is
+testability: call sites cannot replace them without additional seams.</p>
+<h2 id="implemented-performance-measures">Implemented Performance Measures<a class="headerlink" href="#implemented-performance-measures" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Tile-definition and bed-definition maps avoid repeated linear lookup.</li>
+<li>Stable instance registries avoid rebuilding every moving tile.</li>
+<li>Sound effects are pooled and preloaded.</li>
+<li>Stage files are loaded on demand.</li>
+<li>Large clears reduce generic particle complexity.</li>
+<li>Input is serialized by the board busy flag.</li>
+<li>The cascade loop and shuffle attempts use safety limits.</li>
+<li>Web layouts do not upscale beyond the 1080x1920 design reference.</li>
+</ul>
+<p>These measures are visible in code. The repository does not include frame-time
+profiles, memory traces, device matrices, or benchmark results, so numerical
+performance claims would be unsupported.</p>
+<h2 id="failure-handling">Failure Handling<a class="headerlink" href="#failure-handling" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Failure area</th>
+<th>Current behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Stage/layout load</td>
+<td>Screen catches and shows an error state</td>
+</tr>
+<tr>
+<td>Audio startup</td>
+<td>Logs failure; web BGM can retry after interaction</td>
+</tr>
+<tr>
+<td>Inventory load</td>
+<td>Falls back to defaults and saves them</td>
+</tr>
+<tr>
+<td>Invalid swap</td>
+<td>Restores original cells and does not spend a move</td>
+</tr>
+<tr>
+<td>No legal move</td>
+<td>Shows a wait modal and shuffles</td>
+</tr>
+<tr>
+<td>Render/model drift</td>
+<td><code>validateBoardSync()</code> repairs missing or orphaned components</td>
+</tr>
+<tr>
+<td>Cascade runaway</td>
+<td>Stops after 10 passes and logs a warning</td>
+</tr>
+</tbody>
+</table>
+<p>Logging is extensive and useful during development, but many hot paths produce
+verbose output. Release builds should define a deliberate logging policy.</p>
+<h2 id="testing-and-verification-status">Testing and Verification Status<a class="headerlink" href="#testing-and-verification-status" title="Permanent link">&para;</a></h2>
+<p>The repository currently has no meaningful automated coverage.
+<code>test/widget_test.dart</code> is Flutter's counter-app example and references a
+<code>MyApp</code> class absent from this project.</p>
+<p>The highest-value test order is:</p>
+<ol>
+<li>Pure match, 2x2, gravity, solvability, and special-resolver tests.</li>
+<li>A content test that parses and validates all 25 stages.</li>
+<li>Seeded board tests for initialization and shuffle postconditions.</li>
+<li>Widget tests for routes, HUD updates, and terminal dialogs.</li>
+<li>Integration tests for a full valid/invalid turn and booster rollback.</li>
+<li>Golden screenshots for menu, world, and gameplay compositions.</li>
+</ol>
+<p>The <a href="architecture.html#testing-strategy">architecture testing strategy</a> defines
+the expected cases in more detail.</p>
+<h2 id="known-constraints">Known Constraints<a class="headerlink" href="#known-constraints" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Constraint</th>
+<th>Consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>High</td>
+<td>Win next-stage logic uses <code>&lt;= 20</code></td>
+<td>Stage 20 returns to the world instead of advancing into the five-stage endgame</td>
+</tr>
+<tr>
+<td>High</td>
+<td>Booster placement/spend is not atomic</td>
+<td>Inventory and board can diverge</td>
+</tr>
+<tr>
+<td>High</td>
+<td>Automated test scaffold is invalid</td>
+<td>No reliable regression gate</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>Stage validation is disconnected</td>
+<td>Bad content can fail late</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>Weighted spawn has duplicate ownership</td>
+<td>Initialization policy is harder to prove</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>Stage 21 zero-weight fixed specials conflict with validator rules</td>
+<td>Test-arena content cannot pass the validator as currently written</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>Special and regular clears affect scooters differently</td>
+<td>Design and implementation must stay explicitly aligned</td>
+</tr>
+<tr>
+<td>Low</td>
+<td>A stale Android activity exists under an older package path</td>
+<td>Platform configuration is noisier than necessary</td>
+</tr>
+<tr>
+<td>Low</td>
+<td>Web manifest still contains scaffold metadata</td>
+<td>Installed-web presentation is inconsistent with the game</td>
+</tr>
+</tbody>
+</table>
+<h2 id="advertising-learning-exercise">Advertising Learning Exercise<a class="headerlink" href="#advertising-learning-exercise" title="Permanent link">&para;</a></h2>
+<p>The site and repository retain <code>app-ads.txt</code> for a demo AdMob/app-publishing
+exercise. The current source does not initialize an ads SDK and the package
+manifest does not declare Google Mobile Ads. The active reward path grants
+local boosters after a prototype cooldown.</p>
+<p>This distinction matters in a portfolio: learning intent can be documented
+without implying a production monetization integration.</p>
+<h2 id="engineering-takeaways">Engineering Takeaways<a class="headerlink" href="#engineering-takeaways" title="Permanent link">&para;</a></h2>
+<p>The strongest part of this implementation is the decision to separate logical
+board truth from frame-timed presentation. That enables:</p>
+<ul>
+<li>Deterministic reasoning about swaps and cascades.</li>
+<li>Stable visual identity across coordinate mutations.</li>
+<li>Special effects that can stage their impact without becoming the owner of
+  objective progress.</li>
+<li>JSON-authored content that does not modify the core rule engine.</li>
+</ul>
+<p>The next quality step is not more features. It is tightening contracts:
+connecting validation, removing duplicate ownership, making inventory
+transactions atomic, fixing campaign navigation, and establishing deterministic
+tests. Those changes would turn a capable student MVP into a substantially more
+reliable engineering portfolio artifact.</p>
+<h2 id="continue-reading">Continue Reading<a class="headerlink" href="#continue-reading" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="architecture.html">System Architecture</a></li>
+<li><a href="gdd.html">Game Design Document</a></li>
+<li><a href="board-game.html">Board Engine Guide</a></li>
+<li><a href="board-game-rendering.html">BoardGame Rendering Reference</a></li>
+<li><a href="board-controller.html">BoardController Rules Reference</a></li>
+</ul>
+              </article>
+            </div>
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
-        <div class="intro-text">
-          <p>
-            The idea of Phở Logic comes from the desire to promote Vietnamese culture through video games. As the country is well known through its local cuisines internationally, leveraging this acknowledgement I decided to make a draft version to test out whether the idea would work.
-          </p>
-          <p>
-            Furthermore, it is a good way to learn coding, game design, plus the video game and tech industry. It was a long process, but finally I finished a demo version (and learned many hardcore lessons)
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Art & Design Section -->
-    <section class="documentation-section" id="art-design">
-      <div class="section-header">
-          <!-- Art & Design content -->
-        <h2>Art & Design</h2>
-        <p class="section-tag">Visual identity, sprite creation, animation</p>
-      </div>
-      <div class="section-content">
-        <h3>Design Tools & Workflow</h3>
-        <p>
-          Because I wanted to save time (LOL I always have a temper 😄), subscribing to Adobe Cloud Creative turned out to be the best choice. There are no other viable options if you love designing—especially if you want to do it from scratch. If you're a student, Adobe Cloud Creative has the best subscription plans available. From mid-December till mid-February (Lunar New Year), it costs roughly <strong>$50</strong> for the subscription. That's an incredible deal.
-        </p>
-
-        <h3>Sprite Design Best Practices</h3>
-        <p>
-          The design part wasn't really difficult (thank goodness for the AI revolution). For sprites, applying best practice would be using <strong>256x256 px clean sprites as PNG with clear transparent backgrounds</strong>. However, since I wanted to deliver the best result, I made the decision to set sprite sizes at <strong>1024x1024 px</strong> (I wish someone had warned me about this beforehand!). I kept particle designs at <strong>256x256 px</strong> though—that was a good choice and highly recommended.
-        </p>
-
-        <h3>AI-Assisted Creation with Firefly</h3>
-        <p>
-          If you have enough generative AI credits with Firefly, utilize it through the generous <strong>Generative Fill function</strong>. It's the best option right now to rapidly design art and ship prototypes. All you have to do is:
-        </p>
-        <ol>
-          <li>Draw the shape or rough outline</li>
-          <li>Sketch out your ideas on paper</li>
-          <li>Use generative fill to visualize your prompt</li>
-          <li>Refine the ideas later to meet your needs</li>
-        </ol>
-
-        
-        <p>
-          The game consists of <strong>6 normal tiles</strong>, <strong>5 special power-ups</strong>, and various <strong>particle effects</strong>:
-        </p>
-
-        <div class="asset-breakdown">
-          <div class="asset-category">
-            <h4>Normal Tiles (6)</h4>
-            <p>Bánh Mì 🥖, Bánh Xèo 🥞, Cà Phê Trứng ☕, Gỏi Cuốn 🌯, Phở Bowl 🍜, and Rau Muống 🥬. These form the core interactable elements of the game, each representing different Vietnamese culinary icons.</p>
-          </div>
-
-          <div class="asset-category">
-            <h4>Special Power-Ups (5)</h4>
-            <p>Party Popper (Vertical), Party Popper (Horizontal), Firecracker, Sticky Rice Bomb (5-color variant), and Dragon Fly. These special abilities are triggered when players make strategic matches and provide powerful cascade effects to clear larger areas of the board.</p>
-          </div>
-
-          <div class="asset-category">
-            <h4>Particle Effects</h4>
-            <p>Various burst particles activated when matching and clearing tiles, creating popping effects and visual feedback. Particles include bread crumbs, glass shards, soup splashes, sparkles, shrimp leaves, and more—each tied to the gameplay mechanic of satisfying tile elimination.</p>
-          </div>
-        </div>
-
-        <h3>Asset Gallery</h3>
-        <p>Art designs are displayed below:</p>
-        
-        <div class="image-gallery">
-          <div class="gallery-grid">
-            <!-- Normal Tiles -->
-            <div class="gallery-card" data-index="0">
-              <div class="gallery-card-image">
-                <img src="images/pho_bowl.png" alt="Phở Bowl" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Phở Bowl</h4>
-                <p class="card-type">Normal Tile</p>
-                <p class="card-size">1024×1024 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="1">
-              <div class="gallery-card-image">
-                <img src="images/banh_mi.png" alt="Bánh Mì" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Bánh Mì</h4>
-                <p class="card-type">Normal Tile</p>
-                <p class="card-size">1024×1024 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="2">
-              <div class="gallery-card-image">
-                <img src="images/banh_xeo.png" alt="Bánh Xèo" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Bánh Xèo</h4>
-                <p class="card-type">Normal Tile</p>
-                <p class="card-size">1024×1024 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="3">
-              <div class="gallery-card-image">
-                <img src="images/ca_phe_trung.png" alt="Cà Phê Trứng" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Cà Phê Trứng</h4>
-                <p class="card-type">Normal Tile</p>
-                <p class="card-size">1024×1024 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="4">
-              <div class="gallery-card-image">
-                <img src="images/goi_cuon.png" alt="Gỏi Cuốn" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Gỏi Cuốn</h4>
-                <p class="card-type">Normal Tile</p>
-                <p class="card-size">1024×1024 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="5">
-              <div class="gallery-card-image">
-                <img src="images/rau_muong.png" alt="Rau Muống" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Rau Muống</h4>
-                <p class="card-type">Normal Tile</p>
-                <p class="card-size">1024×1024 px</p>
-              </div>
-            </div>
-
-            <!-- Special Power-Ups -->
-            <div class="gallery-card" data-index="6">
-              <div class="gallery-card-image">
-                <img src="images/party_popper_vertical.png" alt="Party Popper Vertical" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Party Popper</h4>
-                <p class="card-type">Special Power-Up (Vertical)</p>
-                <p class="card-size">1024×1024 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="7">
-              <div class="gallery-card-image">
-                <img src="images/party_popper_horizontal.png" alt="Party Popper Horizontal" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Party Popper</h4>
-                <p class="card-type">Special Power-Up (Horizontal)</p>
-                <p class="card-size">1024×1024 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="8">
-              <div class="gallery-card-image">
-                <img src="images/firecracker.png" alt="Firecracker" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Firecracker</h4>
-                <p class="card-type">Special Power-Up</p>
-                <p class="card-size">1024×1024 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="9">
-              <div class="gallery-card-image">
-                <img src="images/sticky_rice_bomb.png" alt="Sticky Rice Bomb" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Sticky Rice Bomb</h4>
-                <p class="card-type">Special Power-Up (5-color)</p>
-                <p class="card-size">1024×1024 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="10">
-              <div class="gallery-card-image">
-                <img src="images/dragon_fly.png" alt="Dragon Fly" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Dragon Fly</h4>
-                <p class="card-type">Special Power-Up</p>
-                <p class="card-size">1024×1024 px</p>
-              </div>
-            </div>
-
-            <!-- Particle Effects -->
-            <div class="gallery-card" data-index="11">
-              <div class="gallery-card-image">
-                <img src="images/bread_crumbs_particle.png" alt="Bread Crumbs Particle" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Bread Crumbs</h4>
-                <p class="card-type">Particle Effect</p>
-                <p class="card-size">256×256 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="12">
-              <div class="gallery-card-image">
-                <img src="images/firecracker_particle.png" alt="Firecracker Particle" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Firecracker</h4>
-                <p class="card-type">Particle Effect</p>
-                <p class="card-size">256×256 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="13">
-              <div class="gallery-card-image">
-                <img src="images/fried_crumb_particle.png" alt="Fried Crumb Particle" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Fried Crumb</h4>
-                <p class="card-type">Particle Effect</p>
-                <p class="card-size">256×256 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="14">
-              <div class="gallery-card-image">
-                <img src="images/glass_particle.png" alt="Glass Particle" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Glass Shards</h4>
-                <p class="card-type">Particle Effect</p>
-                <p class="card-size">256×256 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="15">
-              <div class="gallery-card-image">
-                <img src="images/party_popper_projectile.png" alt="Party Popper Projectile" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Party Popper Projectile</h4>
-                <p class="card-type">Particle Effect</p>
-                <p class="card-size">256×256 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="16">
-              <div class="gallery-card-image">
-                <img src="images/rau_muong_particle.png" alt="Rau Muống Particle" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Rau Muống</h4>
-                <p class="card-type">Particle Effect</p>
-                <p class="card-size">256×256 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="17">
-              <div class="gallery-card-image">
-                <img src="images/scooter_particle_1.png" alt="Scooter Particle 1" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Scooter Particle 1</h4>
-                <p class="card-type">Particle Effect</p>
-                <p class="card-size">256×256 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="18">
-              <div class="gallery-card-image">
-                <img src="images/scooter_particle_2.png" alt="Scooter Particle 2" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Scooter Particle 2</h4>
-                <p class="card-type">Particle Effect</p>
-                <p class="card-size">256×256 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="19">
-              <div class="gallery-card-image">
-                <img src="images/shrimp_leaf_particle.png" alt="Shrimp Leaf Particle" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Shrimp Leaf</h4>
-                <p class="card-type">Particle Effect</p>
-                <p class="card-size">256×256 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="20">
-              <div class="gallery-card-image">
-                <img src="images/soup_splash_particle.png" alt="Soup Splash Particle" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Soup Splash</h4>
-                <p class="card-type">Particle Effect</p>
-                <p class="card-size">256×256 px</p>
-              </div>
-            </div>
-
-            <div class="gallery-card" data-index="21">
-              <div class="gallery-card-image">
-                <img src="images/sparkle_particle.png" alt="Sparkle Particle" />
-              </div>
-              <div class="gallery-card-overlay">
-                <h4>Sparkle</h4>
-                <p class="card-type">Particle Effect</p>
-                <p class="card-size">256×256 px</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        
-
-        <h3>Blocker</h3>
-        <p>
-          For a finishing touch on the final levels, I added the "scooter" as a blocking element into the game. It may seem a bit ironic at first, but personally I think it perfectly matches the cultural vibe. There's something quintessentially Vietnamese about the traffic and sidewalks filled with parked mopeds, bikes, and EV scooters—it's an iconic piece of modern urban life that felt right to include.
-        </p>
-        <p>
-          The scooter tile blocker creates an additional layer of challenge in late-game levels, forcing players to think strategically about board navigation and match planning.
-        </p>
-
-        <div class="blocker-showcase">
-          <div class="blocker-tile">
-            <img src="images/scooter_tile_blocker.png" alt="Scooter Tile Blocker" />
-            <p><strong>Scooter Tile Blocker</strong><br />1024×1024 px</p>
-          </div>
-        </div>
-
-        <!-- Gameplay showcase (placed after blocker showcase) -->
-        <h3>Gameplay Screen Design</h3>
-        <p>
-          For the design of the gameplay screen, I first designed two panels as top and bottom HUDs using the same method—draw the shape and apply generative fill. These HUD elements are used to display the game moves counter, game objective, and bonus power-ups.
-        </p>
-        <p>
-          The background is static and consists of a simple bamboo background designed at 1080p. In fact, all elements that make up the gameplay are designed at 1080p. Later on you'll see that they are implemented using JSON files for responsive layout management.
-        </p>
-        <p>
-          The gameplay interface consists of carefully designed UI elements that create an immersive Vietnamese-themed experience.
-        </p>
-
-        <div class="gameplay-showcase">
-          <!-- Featured central gameplay screenshot -->
-          <div class="gameplay-featured">
-            <img src="gameplay/gameplay.png" alt="Complete Gameplay Screen" />
-            <p><strong>Complete Gameplay Screen</strong><br />1080×1920 px<br />Full game interface preview</p>
-          </div>
-
-          <!-- Surrounding UI elements -->
-          <div class="gameplay-surround">
-            <div class="gameplay-element">
-              <img src="gameplay/top_hud.png" alt="Top HUD Panel" />
-              <p><strong>Top HUD Panel</strong><br />1080×300 px<br />Moves counter & objectives</p>
-            </div>
-            <div class="gameplay-element">
-              <img src="gameplay/bottom_hud.png" alt="Bottom HUD Panel" />
-              <p><strong>Bottom HUD Panel</strong><br />1080×300 px<br />Bonus power-ups & controls</p>
-            </div>
-            <div class="gameplay-element">
-              <img src="gameplay/board.png" alt="Game Board Frame" />
-              <p><strong>Game Board Frame</strong><br />1080×1500 px<br />Tile grid container</p>
-            </div>
-            <div class="gameplay-element">
-              <img src="gameplay/screen_bg_1.png" alt="Screen Background" />
-              <p><strong>Screen Background</strong><br />1080×1920 px<br />Bamboo themed backdrop</p>
-            </div>
-            <div class="gameplay-element">
-              <img src="gameplay/pause_button.png" alt="Pause Button" />
-              <p><strong>Pause Button</strong><br />120×120 px<br />Game pause control</p>
-            </div>
-            <div class="gameplay-element">
-              <img src="gameplay/lotus.png" alt="Lotus Decoration" />
-              <p><strong>Lotus Decoration</strong><br />200×200 px<br />Vietnamese cultural element</p>
-            </div>
-            <div class="gameplay-element">
-              <img src="gameplay/lucky_cat.png" alt="Lucky Cat" />
-              <p><strong>Lucky Cat</strong><br />150×150 px<br />Fortune bringing mascot</p>
-            </div>
-          </div>
-        </div>
-
-          <h3>World Screen Showcase</h3>
-          <p>
-            The world screens are designed using a 1080p (1080 × 1920) base resolution to ensure consistent layout scaling and visual alignment across devices.
-          </p>
-          <p>
-            A decorative bamboo element is animated using a subtle swing effect. This is achieved by continuously rotating the object slightly back and forth along its axis in a loop. The motion simulates natural wind movement, adding life and environmental atmosphere to the scene.
-          </p>
-          <p>
-            A similar looping animation is applied to the cloud elements. Instead of rotation, their X-position is gradually incremented over time and reset once off-screen. This creates the illusion of clouds drifting across the sky, reinforcing the feeling of gentle wind flow and environmental depth.
-          </p>
-          <p>
-            Together, these lightweight animations enhance immersion without introducing heavy performance overhead.
-          </p>
-
-          <div class="gameplay-showcase world-showcase">
-            <div class="gameplay-featured">
-              <img src="world_screen/world_finish.png" alt="World Finish Screen" />
-              <p><strong>World Finish Screen</strong><br />1080×1920 px<br />Main world/map screen</p>
-            </div>
-
-            <div class="gameplay-surround">
-              <div class="gameplay-element">
-                <img src="world_screen/world_001_bg.png" alt="World Background" />
-                <p><strong>World Background</strong><br />1080×1920 px</p>
-              </div>
-              <div class="gameplay-element">
-                <img src="world_screen/bamboo.png" alt="Bamboo Decoration" />
-                <p><strong>Bamboo</strong><br />Decorative element</p>
-              </div>
-              <div class="gameplay-element">
-                <img src="world_screen/cloud_1.png" alt="Cloud 1" />
-                <p><strong>Cloud 1</strong><br />Sky element</p>
-              </div>
-              <div class="gameplay-element">
-                <img src="world_screen/cloud_2.png" alt="Cloud 2" />
-                <p><strong>Cloud 2</strong><br />Sky element</p>
-              </div>
-              <div class="gameplay-element">
-                <img src="world_screen/cloud_3.png" alt="Cloud 3" />
-                <p><strong>Cloud 3</strong><br />Sky element</p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-    <!-- Technology Stack Section -->
-    <section class="documentation-section" id="technology-stack">
-      <div class="section-header">
-        <h2>Tech Stack</h2>
-        <p class="section-tag">Languages, frameworks, and tools</p>
-      </div>
-      <div class="section-content">
-        <h3>Flutter Framework</h3>
-        <p>
-          Speaking of technologies, the framework used is Flutter. Flutter is Google's UI framework, and it is very versatile. Using Dart, you can publish to Android, iOS, and Windows/macOS/Linux from one codebase. Flutter separates UI, data, and logic, which keeps the flow simple (cause to effect). Designing interfaces in Flutter can feel similar to HTML5, but in a more app-style, JavaScript-like approach.
-        </p>
-
-        <div class="documentation-logo-showcase">
-          <div class="documentation-logo">
-            <img src="images/flutter_logo.png" alt="Flutter Logo" />
-            <p><strong>Flutter</strong><br />Google's UI Framework</p>
-          </div>
-        </div>
-
-        <p>
-          On top of Flutter, I use the Flame library (<a href="https://docs.flame-engine.org/latest/" target="_blank" rel="noopener">https://docs.flame-engine.org/latest/</a>). Flame is a lightweight 2D game engine that makes it easy to build quick prototypes. It reminds me of when Flappy Bird shook the Vietnamese game market—the developer used Cocos2d. With Flame, I can build a prototype at a similar quality level. It is not ideal for large-scale projects, but it integrates smoothly with Flutter and simplifies 2D game development.
-        </p>
-
-        <div class="documentation-logo-showcase">
-          <div class="documentation-logo">
-            <img src="images/flame_logo.png" alt="Flame Engine Logo" />
-            <p><strong>Flame Engine</strong><br />2D Game Engine for Flutter</p>
-          </div>
-        </div>
-
-        <h3>AI-Assisted Development</h3>
-        <p>
-          Of course, if you want speed, you'll have to use a coding AI. This is the fun part—there are so many on the market right now. After testing several, GitHub Copilot and Cursor are the ones I would recommend. These companies also offer good discounts for students. I chose GitHub Copilot in the end; it brings the best results. The cost is $10 per month, so that's $20 for 2 months. A good deal for a game prototype!!!
-        </p>
-
-        <p>
-          Using Flutter for UI implementation and Flame for game rendering, the main technologies have been decided. To monitor engagement, I focus on gameplay behavior and optional in-app feedback signals. This helps me understand whether users are actually playing the game—for example, by checking if they use the free-boost panel to claim free items.
-        </p>
-
-        <p>
-          For UX, the app currently has no ads. Instead, an optional feedback section is integrated into Settings for users who want to share feedback. I used Google Forms because it's a simple and effective way to collect opinions. No personal information or compulsory questions are included, and users are warned not to share personal information. Applying what I learned in computing school, I avoided leading questions and made sure the questions are clear and easy to answer.
-        </p>
-
-        <h3>Key Technologies Summary</h3>
-        <div class="documentation-stack-grid">
-          <div class="documentation-item">
-            <h4>Language</h4>
-            <p>Dart</p>
-          </div>
-          <div class="documentation-item">
-            <h4>Framework</h4>
-            <p>Flutter (Google)</p>
-          </div>
-          <div class="documentation-item">
-            <h4>Game Engine</h4>
-            <p>Flame 2D Engine</p>
-          </div>
-          <div class="documentation-item">
-            <h4>Platforms</h4>
-            <p>Android, iOS, Web, Desktop</p>
-          </div>
-        </div>
-
-        
-
-      </div>
-    </section>
-
-    <!-- Game Design & Architecture Section -->
-    <section class="documentation-section" id="game-design">
-      <div class="section-header">
-        <h2>Game Design & Architecture</h2>
-        <p class="section-tag">Mechanics, code structure, and development process</p>
-      </div>
-      <div class="section-content">
-        <p>
-          Here comes the hard part. For the sake of comprehension, I won't go into the detailed code. The source code will be uploaded to Git if anyone's interested—you can view it there. But here's the organization; I know it looks crazy.
-        </p>
-
-        <div class="architecture-diagrams">
-          <img src="images/organization_1.png" alt="Code Organization Diagram 1" title="Main game structure and component hierarchy" />
-          <img src="images/organization_2.png" alt="Code Organization Diagram 2" title="State management and data flow" />
-          <img src="images/organization_3.png" alt="Code Organization Diagram 3" title="UI components and rendering pipeline" />
-          <img src="images/organization_4.png" alt="Code Organization Diagram 4" title="Asset loading and game loop" />
-        </div>
-
-        <p>
-          The basics of Flutter application development—I won't go into those details. <code>app.dart</code>, <code>main.dart</code>, <code>routes.dart</code> are basic files that are required for basic application development. <code>main.dart</code> starts the app (this is also where you run the application, initialize SDKs, and run required async startup operations), <code>app.dart</code> wraps around the build, and <code>routes.dart</code> is where you set up app navigation.
-        </p>
-
-        <p>
-          On top of the executive files, I also used many different helper functions which are then organized into <code>app_logger.dart</code>, <code>json_helpers.dart</code>, <code>animation_helpers.dart</code>. <code>app_logger.dart</code> contains lots of debug functions that print what is happening as the game renders to the console. For the other two, if you understand programming you must have figured out—they are helper functions for animation calling and JSON reader calling (they are just defined in separate Dart files for organization purposes).
-        </p>
-
-        <h3>Project Organization Overview</h3>
-        <pre><code>lib/
-├── main.dart                    # App entry point
-└── src/
-    ├── app/                     # App-level setup (MaterialApp, routes)
-    ├── audio/                   # Sound effects & background music
-    ├── game/                    # Core game logic (match-3 engine)
-    │   ├── board/              # Visual rendering (Flame components)
-    │   ├── model/              # Data structures (Grid, Cells, Coords)
-    │   ├── stages/             # Level definitions & loading
-    │   ├── inventory/          # Player's boosters/power-ups
-    │   ├── vfx/                # Visual effects (particles, animations)
-    │   └── utils/              # Helpers (logging, random picking)
-    ├── screens/                # UI screens (menu, level select, gameplay)
-    ├── widgets/                # Reusable UI components
-    └── utils/                  # General utilities</code></pre>
-
-        <p>
-          The reason the game architecture is so complicated is because (
-          ), I wanted to create a fully functional MVP. Flame and Flutter programming follow a strict cause-and-effect model, requiring numerous functions and managers (
-          ). We'll dive into the most important parts: <code>board_game.dart</code> and <code>board_controller.dart</code>. Think of them as: 1) the main board (the graphics), and 2) the printed circuit (0s and 1s sending signals to control the mainboard). In this case, they're executing fiber optic functions and calling managers to control the game on <code>board_game.dart</code>.
-        </p>
-
-        <h3>JSON-Driven UI Design</h3>
-        <p>
-          For convenience, I implemented separate JSON designs. Screens such as the menu, gameplay, and level select define their visual structure in JSON files (<code>gameplay_1.json</code>, <code>world_screen_1.json</code>, etc.). Each JSON specifies background images, element positions, sizes, and layout metadata. Take a look at the snippet from <code>gameplay_1.json</code> below:
-        </p>
-
-        <div class="code-block">
-          <pre><code class="language-json">{
-  "type": "container",
-  "id": "board_frame",
-  "file": "assets/boards/frames/board.png",
-  "position": { "x": 540, "y": 960 },
-  "size": { "w": 1080, "h": 1500 },
-  "innerOffset": { "x": 0, "y": 80 },
-  "anchor": "center"
-},
-{
-  "type": "image",
-  "id": "bottom_hud",
-  "file": "assets/boards/frames/bottom_hud.png",
-  "position": { "x": 540, "y": 1825 },
-  "size": { "w": 1080, "h": 241 },
-  "anchor": "center"
-}</code></pre>
-        </div>
-
-        <p>
-          As you can see, the size and position of the board and bottom_hud are specified using x and y axes, based on the edges of the screen. Using this method makes scaling and level design much easier. I personally attempted to "vibe code" layouts using media queries and different mathematical functions, but this approach kept breaking across devices. The most reliable solution I found was to use JSON-driven design.
-        </p>
-
-        <p>
-          One of the good thing when you are studying data science is that, you know the basic of JSON 🤣. I may not be good at coding, Copilot is way better than me, but i can comprehend JSON structure enough to turn all JSON design into the kind of metadata needed for the app to understand specific coordinate of where each data should be. The application parses this JSON data using <code>stage_data.dart</code>, allowing screens to be designed as if targeting a fixed 1080×1920 resolution. As long as the original design is kept at 1080p, layout consistency can be maintained while scaling responsively at runtime. Copilot can then generate the appropriate coordinate-scaling logic, making responsiveness easier to implement without constantly reworking layouts.
-        </p>
-
-        <h3>Game Architecture Overview</h3>
-        <p>
-          In terms of programming architecture, Flutter handles the game UI and HUDs, while the Flame engine is responsible for board rendering and animation. The <code>BoardController</code> handles core game rules such as swap validation, match detection, gravity, refills, and cascades, and calls necessary systems like <code>SpecialTileSpawner</code> and <code>SpecialActivationResolver</code>. Conceptually, this acts as the central processing unit of the game logic (not literally).
-        </p>
-
-        <p>
-          The <code>BoardController</code> orchestrates the full match-3 gameplay loop. It validates whether tiles can be swapped, scans the grid for valid matches, analyzes match patterns to determine when special tiles should be spawned, clears matched tiles and blockers, applies gravity to fill empty cells, refills the board with new tiles, and repeatedly resolves cascades until the board reaches a stable state. Once the turn is complete, it decrements the remaining moves and checks win or lose conditions.
-        </p>
-
-        <p>
-          All animations, including tile movement and particle effects, are handled using Flame's <code>MoveEffect</code> system and custom VFX components, which will be discussed next.
-        </p>
-      </div>
-    </section>
-
-    <!-- Animation Section -->
-    <section class="documentation-section" id="animation">
-      <div class="section-header">
-        <h2>Animation</h2>
-        <p class="section-tag">EffectController vs sprite sheets, Flame effects implementation</p>
-      </div>
-      <div class="section-content">
-        <h3>Animation Approaches</h3>
-        <p>
-          For animations, you have 2 choices: utilize Flame Engine's built-in <code>EffectController</code> or create sprite sheet animations. The second method requires knowledge of animation tools such as Adobe After Effects or Rive, etc. These tools can be used to create animations and then export them to Lottie, Riv, or sprite sequences that can be merged into sprite sheets.
-        </p>
-        <p>
-          However, since I'm not skilled at animation, I decided to use Flame's EffectController. Ordinary animations are easy to implement—match, spawn burst, and then just link them to the prepared <code>particles.png</code>.
-        </p>
-
-        <h3>Flame Effects for Special Powers</h3>
-        <p>
-          Flame effects were specifically used for the following in-game powers:
-        </p>
-
-        <table class="animation-table">
-          <thead>
-            <tr>
-              <th>Special Power</th>
-              <th>Effect Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Dragon Fly</td>
-              <td>Fly to a random tile type swapped with</td>
-            </tr>
-            <tr>
-              <td>Party Popper Horizontal</td>
-              <td>Clear Horizontal</td>
-            </tr>
-            <tr>
-              <td>Party Popper Vertical</td>
-              <td>Clear Vertical</td>
-            </tr>
-            <tr>
-              <td>Firecracker</td>
-              <td>Like a dynamite bomb but use a big TET particle</td>
-            </tr>
-            <tr>
-              <td>Sticky Rice Bomb</td>
-              <td>Clear all same tile swapped with</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="table-to-gifs-arrow">
-          <span>↓</span>
-          <p>Actual animations in action</p>
-        </div>
-
-        <div class="animation-gifs-grid">
-          <div class="animation-gif-card">
-            <div class="animation-gif-image">
-              <img src="gif/firecracker.gif" alt="Firecracker Animation" />
-            </div>
-            <div class="animation-gif-overlay">
-              <h4>Firecracker</h4>
-              <p class="gif-description">Dynamite bomb effect with big TET particle</p>
-            </div>
-          </div>
-
-          <div class="animation-gif-card">
-            <div class="animation-gif-image">
-              <img src="gif/horizontal_party_popper.gif" alt="Horizontal Party Popper Animation" />
-            </div>
-            <div class="animation-gif-overlay">
-              <h4>Party Popper Horizontal</h4>
-              <p class="gif-description">Clears entire horizontal row</p>
-            </div>
-          </div>
-
-          <div class="animation-gif-card">
-            <div class="animation-gif-image">
-              <img src="gif/vertical_party_popper.gif" alt="Vertical Party Popper Animation" />
-            </div>
-            <div class="animation-gif-overlay">
-              <h4>Party Popper Vertical</h4>
-              <p class="gif-description">Clears entire vertical column</p>
-            </div>
-          </div>
-
-          <div class="animation-gif-card">
-            <div class="animation-gif-image">
-              <img src="gif/sticky_rice_bomb.gif" alt="Sticky Rice Bomb Animation" />
-            </div>
-            <div class="animation-gif-overlay">
-              <h4>Sticky Rice Bomb</h4>
-              <p class="gif-description">Clears all tiles of the same type</p>
-            </div>
-          </div>
-
-          <div class="animation-gif-card">
-            <div class="animation-gif-image">
-              <img src="gif/blocker.gif" alt="Blocker Animation" />
-            </div>
-            <div class="animation-gif-overlay">
-              <h4>Scooter Blocker</h4>
-              <p class="gif-description">Obstacles that must be cleared</p>
-            </div>
-          </div>
-
-          <div class="animation-gif-card">
-            <div class="animation-gif-image">
-              <img src="gif/dragon_fly.gif" alt="Dragon Fly Animation" />
-            </div>
-            <div class="animation-gif-overlay">
-              <h4>Dragon Fly</h4>
-              <p class="gif-description">Fly to a random tile type swapped with</p>
-            </div>
-          </div>
-        </div>
-
-        <p class="animation-note">
-          Here are the animations after implementation. These were made purely with Move Effects, Rotate Effects, Color Effects...etc.
-        </p>
-      </div>
-    </section>
-
-      <!-- Sound Effects & Background Music (moved here, under Animation) -->
-      <section class="documentation-section" id="audio">
-        <div class="section-header">
-          <h2>Sound Effects & Background Music</h2>
-          <p class="section-tag">SFX, BGM sources and implementation notes</p>
-        </div>
-        <div class="section-content">
-          <p>
-            For prototyping I used royalty-free SFX and BGM from community audio libraries (Pixarbay to be exact). These sites provide many usable tracks and sound effects, but you should always verify the specific license for each file before publishing. For this project I avoided redistribution of third-party assets and only embedded the music in the project in compliance with PixarBay License. 
-          </p>
-          </p>
-          <div class="audio-player">
-            <p><strong>Try it:</strong> click any player below to play the audio.</p>
-            <div id="sfx-list" class="sfx-list"></div>
-          </div>
-        </div>
-      </section>
-
-    <!-- Limitations Section -->
-    <section class="documentation-section limitations-section" id="limitations">
-      <div class="section-header">
-        <h2>Limitations & Reflections</h2>
-        <p class="section-tag">Challenges, trade-offs, and what I'd do differently</p>
-      </div>
-      <div class="section-content">
-
-        <h3>3) Engine Fit and Development Focus</h3>
-        <p>
-          I likely chose the wrong engine for my long-term goals. Flame was approachable and fast for prototyping, but it may not be robust enough to deliver the level of polish and impact I am aiming for. Because of that, I also spent too much time trying to fully understand every detail of the code instead of maintaining momentum and focusing on high-level architecture, which is where vibe coding works best when an engine has stronger built-in support.
-        </p>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-      <div class="footer-content">
-      <div>
-        <h2>Phở Logic</h2>
-        <p>&copy; 2026 CuongTModwork. All rights reserved.</p>
-      </div>
-      <p class="footer-note">For support, contact us through the Google Play Store listing.</p>
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+      </main>
+        <footer class="md-footer">
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 CuongTModwork. Student portfolio project.
     </div>
-  </footer>
-
-  <script src="js/gallery.js"></script>
-  <script src="js/documentation.js"></script>
-</body>
+</div>
+<div class="md-social">
+    <a href="https://play.google.com/store/apps/details?id=com.cuongtmodwork.phologic" target="_blank" rel="noopener" title="Pho Logic on Google Play" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M293.6 234.3 72.9 13l280.8 161.2zM15.3 0C2.3 6.8-6.4 19.2-6.4 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256zm425.2 225.6-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8M72.9 499l280.8-161.2-60.1-60.1z"/></svg>
+    </a>
+    <a href="https://github.com/CuongMe/pho_logic_mvp" target="_blank" rel="noopener" title="Pho Logic source repository" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+</div>
+    </div>
+  </div>
+</footer>
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.tracking", "navigation.path", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tooltips", "content.tabs.link"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
+        <script src="assets/javascripts/audio-demos.js"></script>
+  </body>
 </html>

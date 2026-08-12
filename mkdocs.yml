@@ -1,0 +1,101 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+
+site_name: Pho Logic
+site_url: https://cuongme.github.io/pho_logic_mvp/
+site_description: Technical documentation and game design blueprint for Pho Logic, a Vietnamese-inspired match-3 student portfolio project.
+site_author: CuongTModwork
+repo_url: https://github.com/CuongMe/pho_logic_mvp
+repo_name: CuongMe/pho_logic_mvp
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+site_dir: site
+use_directory_urls: false
+strict: true
+
+theme:
+  name: material
+  language: en
+  logo: assets/images/app_launcher_icon.png
+  favicon: assets/images/app_launcher_icon.png
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    scheme: phologic-light
+    primary: custom
+    accent: custom
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.tracking
+    - navigation.path
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tooltips
+    - content.tabs.link
+
+nav:
+  - Home / Privacy: index.md
+  - Game Design: gdd.md
+  - Engineering:
+      - Technical Overview: documentation.md
+      - System Architecture: architecture.md
+      - Board Engine Guide: board-game.md
+      - BoardGame Rendering: board-game-rendering.md
+      - BoardController Rules: board-controller.md
+
+hooks:
+  - docs_hooks.py
+
+plugins:
+  - search:
+      lang: en
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      title: On this page
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+extra_javascript:
+  - assets/javascripts/audio-demos.js
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/google-play
+      link: https://play.google.com/store/apps/details?id=com.cuongtmodwork.phologic
+      name: Pho Logic on Google Play
+    - icon: fontawesome/brands/github
+      link: https://github.com/CuongMe/pho_logic_mvp
+      name: Pho Logic source repository
+
+copyright: Copyright &copy; 2026 CuongTModwork. Student portfolio project.
