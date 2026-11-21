@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import 'inventory.dart';
 import 'inventory_repository.dart';
 import '../utils/debug_logger.dart';
@@ -11,7 +12,7 @@ class InventoryModel extends ChangeNotifier {
 
   // Belt slots: ordered list of typeIds (typically [101, 102, 103, 104, 105])
   final List<int> _beltSlots = [101, 102, 103, 104, 105];
-  
+
   /// Get current inventory (null if not loaded yet)
   Inventory? get inventory => _inventory;
 
@@ -27,17 +28,20 @@ class InventoryModel extends ChangeNotifier {
 
   /// Get belt slots
   List<int> get beltSlots => List.unmodifiable(_beltSlots);
-  
+
   /// Check if inventory is loaded
   bool get isLoaded => _inventory != null;
 
   /// Add power-up/booster to inventory
   Future<void> add(int typeId, int amount) async {
     if (_inventory == null) {
-      DebugLogger.warn('Cannot add booster: inventory not loaded', category: 'Inventory');
+      DebugLogger.warn(
+        'Cannot add booster: inventory not loaded',
+        category: 'Inventory',
+      );
       return;
     }
-    
+
     await _repository.addBooster(_inventory!, typeId.toString(), amount);
     notifyListeners();
   }
@@ -46,22 +50,28 @@ class InventoryModel extends ChangeNotifier {
   /// Returns true if successful, false if insufficient count
   Future<bool> spend(int typeId, int amount) async {
     if (_inventory == null) {
-      DebugLogger.warn('Cannot spend booster: inventory not loaded', category: 'Inventory');
+      DebugLogger.warn(
+        'Cannot spend booster: inventory not loaded',
+        category: 'Inventory',
+      );
       return false;
     }
-    
-    // Consume multiple boosters
-    for (int i = 0; i < amount; i++) {
-      final success = await _repository.consumeBooster(_inventory!, typeId.toString());
-      if (!success) {
-        DebugLogger.warn('Failed to consume booster $typeId (consumed $i out of $amount)', category: 'Inventory');
-        notifyListeners();
-        return false;
-      }
+
+    try {
+      final success = await _repository.consumeBooster(
+        _inventory!,
+        typeId.toString(),
+        amount: amount,
+      );
+      if (success) notifyListeners();
+      return success;
+    } catch (error) {
+      DebugLogger.error(
+        'Failed to persist booster spend: $error',
+        category: 'Inventory',
+      );
+      return false;
     }
-    
-    notifyListeners();
-    return true;
   }
 
   /// Load inventory from SharedPreferences or defaults
@@ -70,7 +80,7 @@ class InventoryModel extends ChangeNotifier {
     notifyListeners();
     DebugLogger.inventory('Inventory loaded: boosters=${_inventory!.boosters}');
   }
-  
+
   /// Reset inventory to defaults (clears SharedPreferences)
   Future<void> reset() async {
     await _repository.resetInventory();
@@ -78,7 +88,7 @@ class InventoryModel extends ChangeNotifier {
     notifyListeners();
     DebugLogger.inventory('Inventory reset to defaults');
   }
-  
+
   /// Force reload from JSON (for debugging/testing)
   /// Use this if inventory is stuck at 0
   Future<void> forceLoadDefaults() async {

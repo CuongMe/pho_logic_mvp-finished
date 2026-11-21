@@ -4,7 +4,8 @@ publish_to: 'none'
 version: 1.0.0+6
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.13.0 <4.0.0"
+  flutter: ">=3.38.4"
 
 dependencies:
   flutter:
@@ -91,9 +92,6 @@ flutter:
     
     # Stages
     - assets/stages/
-    
-    # Test assets
-    - assets/test/
     
     # UI
     - assets/ui/level_select/

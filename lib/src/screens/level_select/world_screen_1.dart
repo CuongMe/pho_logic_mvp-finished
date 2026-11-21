@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -7,9 +8,9 @@ import 'package:flutter/services.dart' show rootBundle;
 // Import app-level navigatorKey for global navigation
 import '../../app/app.dart';
 import '../../game/progress/stage_progress_repository.dart';
+import '../../game/utils/debug_logger.dart';
 import '../../utils/json_helpers.dart';
 import 'stage_progress_modal.dart';
-
 
 class WorldScreen1 extends StatefulWidget {
   const WorldScreen1({super.key});
@@ -31,7 +32,9 @@ class _WorldScreen1State extends State<WorldScreen1> {
 
   Future<void> _loadData() async {
     try {
-      final jsonString = await rootBundle.loadString('assets/json_design/world_screen_1.json');
+      final jsonString = await rootBundle.loadString(
+        'assets/json_design/world_screen_1.json',
+      );
       final jsonData = json.decode(jsonString);
       if (!mounted) return;
       setState(() {
@@ -50,18 +53,12 @@ class _WorldScreen1State extends State<WorldScreen1> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (_error != null) {
-      return Scaffold(
-        body: Center(child: Text(_error!)),
-      );
+      return Scaffold(body: Center(child: Text(_error!)));
     }
-    return Scaffold(
-      body: _WorldScreenLayout(data: _data!),
-    );
+    return Scaffold(body: _WorldScreenLayout(data: _data!));
   }
 }
 
@@ -139,7 +136,8 @@ class _WorldScreenLayout extends StatefulWidget {
   State<_WorldScreenLayout> createState() => _WorldScreenLayoutState();
 }
 
-class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProviderStateMixin {
+class _WorldScreenLayoutState extends State<_WorldScreenLayout>
+    with TickerProviderStateMixin {
   late AnimationController _bambooController;
   late AnimationController _cloud1Controller;
   late AnimationController _cloud2Controller;
@@ -147,69 +145,94 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
   late AnimationController _lanternSlideController;
   final StageProgressRepository _stageProgressRepository =
       StageProgressRepository();
-  
+
   late Animation<double> _bambooSwing;
   late Animation<Offset> _lanternSlide;
-  
+
   // Lantern cycling state - switches in complete sets of 5
   // Set 1: 1-5, Set 2: 6-10, Set 3: 11-15, Set 4: 16-20, Set 5: 21-25
   int _currentLanternStart = 1; // Can be 1, 6, 11, 16, or 21
   int _nextLanternStart = 1; // The next set to display
   bool _isTransitioning = false;
+  bool _reduceMotion = false;
   bool _isProgressLoading = true;
   Map<int, StageResult> _stageProgress = {};
 
   @override
   void initState() {
     super.initState();
-    
+
     // Bamboo swinging animation (gentle back and forth)
     _bambooController = AnimationController(
       duration: const Duration(seconds: 3),
       vsync: this,
     )..repeat(reverse: true);
-    
-    _bambooSwing = Tween<double>(
-      begin: -0.05, // -5 degrees
-      end: 0.05,    // +5 degrees
-    ).animate(CurvedAnimation(
-      parent: _bambooController,
-      curve: Curves.easeInOut,
-    ));
-    
+
+    _bambooSwing =
+        Tween<double>(
+          begin: -0.05, // -5 degrees
+          end: 0.05, // +5 degrees
+        ).animate(
+          CurvedAnimation(parent: _bambooController, curve: Curves.easeInOut),
+        );
+
     // Cloud 1 moving animation (slow horizontal movement, wraps around)
     _cloud1Controller = AnimationController(
       duration: const Duration(seconds: 20),
       vsync: this,
     )..repeat();
-    
+
     // Cloud 2 moving animation (slower, wraps around in opposite direction)
     _cloud2Controller = AnimationController(
       duration: const Duration(seconds: 40),
       vsync: this,
     )..repeat();
-    
+
     // Cloud 3 moving animation (slightly faster, wraps around)
     _cloud3Controller = AnimationController(
       duration: const Duration(seconds: 30),
       vsync: this,
     )..repeat();
-    
+
     // Lantern slide animation (slide out bottom, slide in from bottom)
     _lanternSlideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 180),
       vsync: this,
     );
-    
-    _lanternSlide = Tween<Offset>(
-      begin: Offset.zero, // Start at original position
-      end: const Offset(0.0, 8.0), // Slide down 8x widget height (far off bottom)
-    ).animate(CurvedAnimation(
-      parent: _lanternSlideController,
-      curve: Curves.easeInOut,
-    ));
+
+    _lanternSlide =
+        Tween<Offset>(
+          begin: Offset.zero, // Start at original position
+          end: const Offset(0.0, 1.0),
+        ).animate(
+          CurvedAnimation(
+            parent: _lanternSlideController,
+            curve: Curves.easeInOut,
+          ),
+        );
 
     _loadStageProgress(markLoading: true);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (reduceMotion == _reduceMotion) return;
+    _reduceMotion = reduceMotion;
+    final ambience = [
+      _bambooController,
+      _cloud1Controller,
+      _cloud2Controller,
+      _cloud3Controller,
+    ];
+    for (final controller in ambience) {
+      if (reduceMotion) {
+        controller.stop();
+      } else {
+        controller.repeat();
+      }
+    }
   }
 
   @override
@@ -221,26 +244,30 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
     _lanternSlideController.dispose();
     super.dispose();
   }
-  
+
   /// Animate lantern transition when switching sets (slide out bottom, slide in from bottom)
   void _switchLanternSet(int newStart) {
     if (_isTransitioning) return; // Prevent multiple transitions at once
-    
+    if (_reduceMotion) {
+      setState(() => _currentLanternStart = newStart);
+      return;
+    }
+
     setState(() {
       _isTransitioning = true;
       _nextLanternStart = newStart;
     });
-    
+
     // Slide current lanterns down and off screen
     _lanternSlideController.forward().then((_) {
       // Switch to new lantern set
       setState(() {
         _currentLanternStart = _nextLanternStart;
       });
-      
+
       // Reset to start position (new lanterns start below screen)
       _lanternSlideController.value = 1.0; // Start at bottom
-      
+
       // Slide new lanterns up into place
       _lanternSlideController.reverse().then((_) {
         setState(() {
@@ -257,7 +284,22 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
       });
     }
 
-    final progress = await _stageProgressRepository.loadProgress();
+    Map<int, StageResult> progress;
+    try {
+      progress = await _stageProgressRepository.loadProgress();
+    } catch (error) {
+      DebugLogger.error(
+        'Failed to load stage progress: $error',
+        category: 'WorldScreen',
+      );
+      if (mounted) {
+        setState(() => _isProgressLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Saved progress could not be loaded')),
+        );
+      }
+      return;
+    }
     if (!mounted) return;
 
     setState(() {
@@ -284,110 +326,118 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
     final completedCount = _stageProgress.length;
     final countText = completedCount > 99 ? '99+' : '$completedCount';
 
-    return _AnimatedButton(
+    return Semantics(
+      button: true,
+      label:
+          '$completedCount recorded stage results, including clears and losses',
       onTap: _showProgressModal,
-      child: SizedBox(
-        width: 74,
-        height: 74,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFFD38A3A), Color(0xFF8D4E1E)],
-                  ),
-                  border: Border.all(
-                    color: const Color(0xFFE7B272),
-                    width: 1.6,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: Padding(
-                padding: const EdgeInsets.all(5),
+      child: _AnimatedButton(
+        onTap: _showProgressModal,
+        child: SizedBox(
+          width: 74,
+          height: 74,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(22),
                     gradient: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xFFB66B2D), Color(0xFF6E3E1A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFD38A3A), Color(0xFF8D4E1E)],
                     ),
                     border: Border.all(
-                      color: const Color(0xFF7B461B),
-                      width: 1.2,
+                      color: const Color(0xFFE7B272),
+                      width: 1.6,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
                   ),
-                  child: Center(
-                    child: _isProgressLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.4,
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.all(5),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFFB66B2D), Color(0xFF6E3E1A)],
+                      ),
+                      border: Border.all(
+                        color: const Color(0xFF7B461B),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Center(
+                      child: _isProgressLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.4,
+                                color: Color(0xFFFFE9C8),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.fact_check_rounded,
+                              size: 34,
                               color: Color(0xFFFFE9C8),
                             ),
-                          )
-                        : const Icon(
-                            Icons.fact_check_rounded,
-                            size: 34,
-                            color: Color(0xFFFFE9C8),
-                          ),
+                    ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              left: 8,
-              right: 8,
-              bottom: 6,
-              child: Container(
-                height: 6,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-            if (!_isProgressLoading && completedCount > 0)
               Positioned(
-                right: -7,
-                top: -7,
+                left: 8,
+                right: 8,
+                bottom: 6,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  height: 6,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFC63D2B),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: const Color(0xFFFFE5BF),
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    countText,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    color: Colors.black.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
               ),
-          ],
+              if (!_isProgressLoading && completedCount > 0)
+                Positioned(
+                  right: -7,
+                  top: -7,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFC63D2B),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFFFFE5BF),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      countText,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -416,16 +466,16 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
       clipBehavior: Clip.none,
       children: [
         Positioned.fill(
-          child: Image.asset(
-            widget.data.background,
-            fit: BoxFit.cover,
-          ),
+          child: Image.asset(widget.data.background, fit: BoxFit.cover),
         ),
-        ...widget.data.elements.map((element) => _buildElement(element, scale, xOffset, yOffset, screenSize.width)),
+        ...widget.data.elements.map(
+          (element) =>
+              _buildElement(element, scale, xOffset, yOffset, screenSize.width),
+        ),
       ],
     );
   }
-  
+
   /// Build a cloud with wrap-around animation and vertical bob
   Widget _buildCloud({
     required AnimationController controller,
@@ -451,12 +501,12 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
       builder: (context, _) {
         // continuous pixel position from 0..travel
         final t = controller.value * travel;
-        
+
         // Calculate position starting from initialPos
         // For forward: start at initialPos, add t
         // For reverse: start at initialPos, subtract t (which means add travel - t)
         // Both should result in x = baseLeft when t = 0
-        final pos = reverse 
+        final pos = reverse
             ? (initialPos + travel - t) % travel
             : (initialPos + t) % travel;
 
@@ -476,10 +526,24 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
     );
   }
 
-  Widget _buildElement(_WorldElement element, double scale, double xOffset, double yOffset, double screenWidth) {
-    Offset actualPosition = _calculatePosition(element, scale, xOffset, yOffset);
+  Widget _buildElement(
+    _WorldElement element,
+    double scale,
+    double xOffset,
+    double yOffset,
+    double screenWidth,
+  ) {
+    Offset actualPosition = _calculatePosition(
+      element,
+      scale,
+      xOffset,
+      yOffset,
+    );
     // Clouds are already bigger in JSON, so just use normal scaling
-    Size actualSize = Size(element.size.width * scale, element.size.height * scale);
+    Size actualSize = Size(
+      element.size.width * scale,
+      element.size.height * scale,
+    );
 
     // JSON-driven progress access button (coordinates/size from world_screen_1.json)
     if (element.id == 'progress') {
@@ -494,7 +558,7 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
         ),
       );
     }
-    
+
     // Dynamically change lantern files based on current lantern set
     String imageFile = element.file;
     if (element.id.startsWith('stage_')) {
@@ -504,34 +568,25 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
         imageFile = 'assets/world/world_001/lanterns/lantern_$lanternNum.png';
       }
     }
-    
+
     Widget child;
     if (element.type == 'image') {
-      child = Image.asset(
-        imageFile,
-        fit: BoxFit.contain,
-      );
+      child = Image.asset(imageFile, fit: BoxFit.contain);
     } else if (element.type == 'button') {
       child = _AnimatedButton(
         onTap: () => _handleButtonTap(element.id),
-        child: Image.asset(
-          imageFile,
-          fit: BoxFit.contain,
-        ),
+        child: Image.asset(imageFile, fit: BoxFit.contain),
       );
     } else {
       child = Container();
     }
-    
+
     // Apply animations based on element ID
     Widget animatedChild = child;
-    
+
     // Apply slide animation to lanterns when switching
     if (element.id.startsWith('stage_')) {
-      animatedChild = SlideTransition(
-        position: _lanternSlide,
-        child: child,
-      );
+      animatedChild = SlideTransition(position: _lanternSlide, child: child);
     } else if (element.id == 'bamboo') {
       // Gentle swinging animation for bamboo
       animatedChild = AnimatedBuilder(
@@ -539,7 +594,8 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
         builder: (context, child) {
           return Transform.rotate(
             angle: _bambooSwing.value,
-            alignment: Alignment.bottomCenter, // Rotate around bottom (where it's planted)
+            alignment: Alignment
+                .bottomCenter, // Rotate around bottom (where it's planted)
             child: child!,
           );
         },
@@ -576,7 +632,7 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
         reverse: false,
       );
     }
-    
+
     return Positioned(
       left: actualPosition.dx,
       top: actualPosition.dy,
@@ -586,10 +642,21 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
     );
   }
 
-  Offset _calculatePosition(_WorldElement element, double scale, double xOffset, double yOffset) {
+  Offset _calculatePosition(
+    _WorldElement element,
+    double scale,
+    double xOffset,
+    double yOffset,
+  ) {
     // Force center-only anchoring: treat element.position as center
-    final x = xOffset + element.position.dx * scale - (element.size.width * scale) / 2;
-    final y = yOffset + element.position.dy * scale - (element.size.height * scale) / 2;
+    final x =
+        xOffset +
+        element.position.dx * scale -
+        (element.size.width * scale) / 2;
+    final y =
+        yOffset +
+        element.position.dy * scale -
+        (element.size.height * scale) / 2;
     return Offset(x, y);
   }
 
@@ -601,7 +668,8 @@ class _WorldScreenLayoutState extends State<_WorldScreenLayout> with TickerProvi
       case 'home':
         // Go back to menu
         if (context != null) {
-          Navigator.of(context).pushNamedAndRemoveUntil('/menu', (route) => false);
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil('/menu', (route) => false);
         }
         break;
       case 'previous':
@@ -654,16 +722,14 @@ class _AnimatedButton extends StatefulWidget {
   final VoidCallback onTap;
   final Widget child;
 
-  const _AnimatedButton({
-    required this.onTap,
-    required this.child,
-  });
+  const _AnimatedButton({required this.onTap, required this.child});
 
   @override
   State<_AnimatedButton> createState() => _AnimatedButtonState();
 }
 
-class _AnimatedButtonState extends State<_AnimatedButton> with SingleTickerProviderStateMixin {
+class _AnimatedButtonState extends State<_AnimatedButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -674,9 +740,10 @@ class _AnimatedButtonState extends State<_AnimatedButton> with SingleTickerProvi
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -691,11 +758,7 @@ class _AnimatedButtonState extends State<_AnimatedButton> with SingleTickerProvi
 
   void _handleTapUp(TapUpDetails details) {
     _controller.reverse();
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        widget.onTap();
-      }
-    });
+    widget.onTap();
   }
 
   void _handleTapCancel() {
@@ -708,10 +771,7 @@ class _AnimatedButtonState extends State<_AnimatedButton> with SingleTickerProvi
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
       onTapCancel: _handleTapCancel,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
-      ),
+      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
     );
   }
 }

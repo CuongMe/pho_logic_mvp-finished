@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../utils/weighted_picker.dart';
 import 'stage_data.dart';
+import 'stage_validator.dart';
 import '../model/grid_model.dart';
 
 class StageBuilder {
@@ -10,19 +11,24 @@ class StageBuilder {
   ///   0 = weighted random spawn
   ///   -1 = no tile (void/empty)
   ///   >=1 = fixed tile id
-  static BoardState buildBoardState(StageData stage) {
+  static BoardState buildBoardState(StageData stage, {Random? random}) {
+    StageValidator.validateOrThrow(stage);
+    final rng = random ?? Random();
     final rows = stage.rows;
     final cols = stage.columns;
 
     final tileMatrix = List.generate(rows, (_) => List<int>.filled(cols, 0));
     final bedMatrix = List.generate(rows, (_) => List<int>.filled(cols, 0));
     final blockerMatrix = List.generate(
-        rows, (_) => List<int>.filled(cols, 0)); // Track blocker markers
+      rows,
+      (_) => List<int>.filled(cols, 0),
+    ); // Track blocker markers
 
-    final tileIds = stage.tiles.map((t) => t.id).toList();
-    final weights = stage.tiles.map((t) => t.weight).toList();
+    final spawnableTiles = stage.tiles.where((t) => t.id < 101).toList();
+    final tileIds = spawnableTiles.map((t) => t.id).toList();
+    final weights = spawnableTiles.map((t) => t.weight).toList();
 
-    // Validate: if any 0 or -2 cells exist (weighted spawn or blockers), tiles must be provided and weights must be > 0
+    // Blocker cells also need stage spawn rules available for future refill.
     bool hasWeightedSpawn = false;
     bool hasBlockers = false;
     for (var row in stage.tileMap) {
@@ -42,15 +48,11 @@ class StageBuilder {
     if (needsPicker) {
       if (tileIds.isEmpty) {
         throw ArgumentError(
-            'Stage contains weighted spawn or blocker cells but `tiles` is empty. Provide tile definitions.');
-      }
-      if (weights.any((w) => w <= 0)) {
-        throw ArgumentError(
-            'All tile weights must be > 0 when using weighted spawn or blockers.');
+          'Stage contains weighted spawn or blocker cells but `tiles` is empty. Provide tile definitions.',
+        );
       }
     }
 
-    final rng = Random();
     final picker = needsPicker ? WeightedPicker(weights, rng) : null;
     final allowInitialMatches = stage.allowInitialMatches;
 
@@ -77,7 +79,8 @@ class StageBuilder {
     int pickTileId(int row, int col) {
       if (picker == null) {
         throw ArgumentError(
-            'Weighted spawn requested but no picker available.');
+          'Weighted spawn requested but no picker available.',
+        );
       }
       if (allowInitialMatches) {
         return tileIds[picker.pickIndex()];
@@ -100,12 +103,7 @@ class StageBuilder {
         // -1 = no tile (void/empty)
         // -2 = blocker marker (scooter_tile_blocker)
         // >=1 = fixed tile id
-        int val = 0;
-        try {
-          val = stage.tileMap[r][c];
-        } catch (_) {
-          val = 0;
-        }
+        final val = stage.tileMap[r][c];
 
         if (val == 0) {
           // Weighted random spawn
@@ -126,32 +124,31 @@ class StageBuilder {
         }
 
         // bed map
-        int b = 0;
-        try {
-          b = stage.bedMap[r][c];
-        } catch (_) {
-          b = 0;
-        }
-        bedMatrix[r][c] = b;
+        bedMatrix[r][c] = stage.bedMap[r][c];
       }
     }
 
     return BoardState(
-        rows: rows,
-        cols: cols,
-        tileIds: tileMatrix,
-        bedIds: bedMatrix,
-        blockerIds: blockerMatrix);
+      rows: rows,
+      cols: cols,
+      tileIds: tileMatrix,
+      bedIds: bedMatrix,
+      blockerIds: blockerMatrix,
+    );
   }
 
   /// Convenience: build a filled GridModel directly.
-  static GridModel buildGridModel(StageData stage) {
-    final state = buildBoardState(stage);
+  static GridModel buildGridModel(StageData stage, {Random? random}) {
+    final state = buildBoardState(stage, random: random);
     return GridModel.fromBoardState(state, stageData: stage);
   }
 
   static bool _wouldCreateMatch(
-      List<List<int>> tileMatrix, int row, int col, int tileId) {
+    List<List<int>> tileMatrix,
+    int row,
+    int col,
+    int tileId,
+  ) {
     if (tileId <= 0) return false;
     if (col >= 2 &&
         tileMatrix[row][col - 1] == tileId &&

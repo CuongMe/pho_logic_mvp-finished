@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+
 import '../../app/app.dart';
 import '../../app/routes.dart';
 import '../../game/stages/stage_data.dart'; // For GridRect
@@ -17,7 +19,6 @@ import '../../widgets/atlas_aware_image.dart';
 import 'board_viewport.dart';
 import 'burst_move_counter.dart';
 import 'pause_screen.dart';
-import 'no_moves_modal.dart';
 import 'win_modal.dart';
 import 'lose_modal.dart';
 
@@ -44,8 +45,9 @@ class GameplayUIData {
 
   factory GameplayUIData.fromJson(Map<String, dynamic> json) {
     final gridRectJson = json['gridRect'] as Map<String, dynamic>?;
-    final gridRect =
-        gridRectJson != null ? GridRect.fromJson(gridRectJson) : null;
+    final gridRect = gridRectJson != null
+        ? GridRect.fromJson(gridRectJson)
+        : null;
 
     return GameplayUIData(
       schemaVersion: json['schemaVersion'],
@@ -64,15 +66,13 @@ class GameplayUIData {
 /// Individual UI element in the gameplay screen
 /// Supports: container, image, button, movesCounter, objective, powerUpSlot types
 class GameplayElement {
-  final String
-      type; // 'container', 'image', 'button', 'movesCounter', 'objective', 'powerUpSlot'
+  final String type; // 'container', 'image', 'button', 'movesCounter', 'objective', 'powerUpSlot'
   final String id;
   final String? file; // Optional for movesCounter type
   final Offset position;
   final Size size;
   final String anchor; // 'center' (only center anchoring supported)
-  final int?
-      objectiveIndex; // For objective type: which objective index to display (0-based)
+  final int? objectiveIndex; // For objective type: which objective index to display (0-based)
   final int? tileTypeId; // For powerUpSlot type: which power-up type (101-105)
   final double? badgeDx; // For powerUpSlot type: badge X offset from center
   final double? badgeDy; // For powerUpSlot type: badge Y offset from center
@@ -119,7 +119,7 @@ class GameplayElement {
 /// Main gameplay screen - renders UI from JSON design file
 class GameplayScreen1 extends StatefulWidget {
   final int
-      stageId; // Stage ID to load (e.g., 1 for stage_001, 2 for stage_002)
+  stageId; // Stage ID to load (e.g., 1 for stage_001, 2 for stage_002)
 
   const GameplayScreen1({
     super.key,
@@ -146,8 +146,9 @@ class _GameplayScreen1State extends State<GameplayScreen1> {
   Future<void> _loadData() async {
     try {
       // Load UI data
-      final uiJsonString =
-          await rootBundle.loadString('assets/json_design/gameplay_1.json');
+      final uiJsonString = await rootBundle.loadString(
+        'assets/json_design/gameplay_1.json',
+      );
       final uiJsonData = json.decode(uiJsonString);
 
       // Load stage data
@@ -173,15 +174,11 @@ class _GameplayScreen1State extends State<GameplayScreen1> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_error != null) {
-      return Scaffold(
-        body: Center(child: Text(_error!)),
-      );
+      return Scaffold(body: Center(child: Text(_error!)));
     }
 
     return Scaffold(
@@ -234,6 +231,7 @@ class _GameplayLayoutState extends State<_GameplayLayout>
   bool _hasShownWinModal = false;
   bool _hasShownLoseModal = false;
   bool _hasRecordedStageResult = false;
+  bool _hasShownBoardError = false;
 
   int _countInitialBlockers(StageData stageData) {
     var count = 0;
@@ -258,7 +256,14 @@ class _GameplayLayoutState extends State<_GameplayLayout>
 
     // Initialize inventory from SharedPreferences or defaults
     _inventory = InventoryModel();
-    _inventory.load();
+    unawaited(
+      _inventory.load().catchError((Object error, StackTrace stackTrace) {
+        DebugLogger.error(
+          'Failed to load inventory: $error',
+          category: 'Gameplay',
+        );
+      }),
+    );
 
     // Initialize game state if stageData is available
     if (widget.stageData != null) {
@@ -273,18 +278,14 @@ class _GameplayLayoutState extends State<_GameplayLayout>
 
   void _checkGameEndConditions() {
     if (_gameState == null) return;
+    if (_boardViewportKey.currentState?.isBusy ?? false) return;
 
     // Check win condition
     if (_gameState!.isWon && !_hasShownWinModal) {
       _hasShownWinModal = true;
       _recordStageResult(StageResult.cleared);
-      // Use addPostFrameCallback to avoid showing dialog during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 800), () {
-          if (mounted) {
-            _showWinModal();
-          }
-        });
+        if (mounted) _showWinModal();
       });
     }
 
@@ -292,13 +293,8 @@ class _GameplayLayoutState extends State<_GameplayLayout>
     if (_gameState!.isLost && !_hasShownLoseModal) {
       _hasShownLoseModal = true;
       _recordStageResult(StageResult.lose);
-      // Use addPostFrameCallback to avoid showing dialog during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 800), () {
-          if (mounted) {
-            _showLoseModal();
-          }
-        });
+        if (mounted) _showLoseModal();
       });
     }
   }
@@ -306,7 +302,23 @@ class _GameplayLayoutState extends State<_GameplayLayout>
   void _recordStageResult(StageResult result) {
     if (_hasRecordedStageResult) return;
     _hasRecordedStageResult = true;
-    unawaited(_stageProgressRepository.saveStageResult(widget.stageId, result));
+    unawaited(_saveStageResult(result));
+  }
+
+  Future<void> _saveStageResult(StageResult result) async {
+    try {
+      await _stageProgressRepository.saveStageResult(widget.stageId, result);
+    } catch (error) {
+      DebugLogger.error(
+        'Failed to save stage progress: $error',
+        category: 'Gameplay',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Progress could not be saved')),
+        );
+      }
+    }
   }
 
   void _showWinModal() {
@@ -323,8 +335,8 @@ class _GameplayLayoutState extends State<_GameplayLayout>
           },
           onNextLevel: () {
             Navigator.of(context).pop();
-            final nextStageId = widget.stageId + 1;
-            if (nextStageId <= 20) {
+            final nextStageId = Routes.nextStageId(widget.stageId);
+            if (nextStageId != null) {
               Navigator.of(context)
                   .pushReplacementNamed('/gameplay/$nextStageId');
             } else {
@@ -362,25 +374,47 @@ class _GameplayLayoutState extends State<_GameplayLayout>
     );
   }
 
-  /// Show "No Possible Match" modal during shuffle (auto-dismisses after delay)
-  Future<void> _showNoMovesModal() async {
-    // Show modal
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const PopScope(
-        canPop: false,
-        child: NoMovesModal(),
-      ),
+  Future<void> _showNoMovesCue() async {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Shuffling the board'),
+          duration: Duration(milliseconds: 600),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+
+  void _handleBoardError(Object error) {
+    DebugLogger.error(
+      'Stage board became unplayable: $error',
+      category: 'Gameplay',
     );
-
-    // Wait for shuffle animation (1.5 seconds)
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    // Dismiss modal
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    if (!mounted || _hasShownBoardError) return;
+    _hasShownBoardError = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Stage could not continue'),
+          content: const Text(
+            'The board could not be made playable. Return to the world map and try this stage again.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                Navigator.of(context).pushReplacementNamed(Routes.world1);
+              },
+              child: const Text('World map'),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   @override
@@ -404,13 +438,17 @@ class _GameplayLayoutState extends State<_GameplayLayout>
 
   void _showPauseScreen() {
     if (_isPaused) {
-      DebugLogger.log('Game already paused, ignoring pause button tap',
-          category: 'PauseButton');
+      DebugLogger.log(
+        'Game already paused, ignoring pause button tap',
+        category: 'PauseButton',
+      );
       return; // Already paused, don't show again
     }
 
-    DebugLogger.log('Pause button tapped - showing pause screen',
-        category: 'PauseButton');
+    DebugLogger.log(
+      'Pause button tapped - showing pause screen',
+      category: 'PauseButton',
+    );
     setState(() {
       _isPaused = true;
       _dialogClosingFromButton = false;
@@ -419,10 +457,8 @@ class _GameplayLayoutState extends State<_GameplayLayout>
 
     showDialog(
       context: context,
-      barrierDismissible:
-          false, // Don't allow tapping outside to dismiss (prevent accidental resumes)
-      barrierColor: Colors
-          .transparent, // Transparent barrier (we handle dimming in PauseScreen)
+      barrierDismissible: false, // Don't allow tapping outside to dismiss (prevent accidental resumes)
+      barrierColor: Colors.transparent, // Transparent barrier (we handle dimming in PauseScreen)
       builder: (context) => PopScope(
         canPop:
             false, // Prevent back button from closing (must use resume button)
@@ -500,8 +536,9 @@ class _GameplayLayoutState extends State<_GameplayLayout>
         ),
 
         // Elements positioned relative to the centered design area
-        ...widget.uiData.elements
-            .map((e) => _buildElement(e, scale, xOffset, yOffset)),
+        ...widget.uiData.elements.map(
+          (e) => _buildElement(e, scale, xOffset, yOffset),
+        ),
 
         // Board viewport: permanent slot where Flame board will be placed
         // Contains GameWidget that renders the board
@@ -510,14 +547,20 @@ class _GameplayLayoutState extends State<_GameplayLayout>
             BoardViewport(
               key: _boardViewportKey,
               rect: getBoardViewportRect(
-                  widget.uiData.gridRect!, scale, xOffset, yOffset),
+                widget.uiData.gridRect!,
+                scale,
+                xOffset,
+                yOffset,
+              ),
               gridRect: widget.uiData.gridRect!,
               rows: widget.stageData!.rows,
               columns: widget.stageData!.columns,
               stageData: widget.stageData!,
               inventory: _inventory,
               gameState: _gameState!,
-              onNoMovesDetected: _showNoMovesModal,
+              onNoMovesDetected: _showNoMovesCue,
+              onTurnResolved: _checkGameEndConditions,
+              onStageError: _handleBoardError,
             ),
       ],
     );
@@ -527,7 +570,11 @@ class _GameplayLayoutState extends State<_GameplayLayout>
   /// Converts gridRect from design coordinates to screen coordinates
   /// This is the single source of truth for board positioning
   Rect getBoardViewportRect(
-      GridRect gridRect, double scale, double xOffset, double yOffset) {
+    GridRect gridRect,
+    double scale,
+    double xOffset,
+    double yOffset,
+  ) {
     final left = xOffset + gridRect.x * scale;
     final top = yOffset + gridRect.y * scale;
     final width = gridRect.w * scale;
@@ -538,12 +585,18 @@ class _GameplayLayoutState extends State<_GameplayLayout>
   /// Calculate actual screen position from design coordinates
   /// Uses center-only anchoring (all elements are anchored at center)
   Offset _calculatePosition(
-      GameplayElement element, double scale, double xOffset, double yOffset) {
+    GameplayElement element,
+    double scale,
+    double xOffset,
+    double yOffset,
+  ) {
     // Center-only anchoring
-    final x = xOffset +
+    final x =
+        xOffset +
         element.position.dx * scale -
         (element.size.width * scale) / 2;
-    final y = yOffset +
+    final y =
+        yOffset +
         element.position.dy * scale -
         (element.size.height * scale) / 2;
     return Offset(x, y);
@@ -551,10 +604,16 @@ class _GameplayLayoutState extends State<_GameplayLayout>
 
   /// Build a single UI element (container, image, button, movesCounter, or objective)
   Widget _buildElement(
-      GameplayElement element, double scale, double xOffset, double yOffset) {
+    GameplayElement element,
+    double scale,
+    double xOffset,
+    double yOffset,
+  ) {
     final actualPos = _calculatePosition(element, scale, xOffset, yOffset);
-    final actualSize =
-        Size(element.size.width * scale, element.size.height * scale);
+    final actualSize = Size(
+      element.size.width * scale,
+      element.size.height * scale,
+    );
 
     Widget child;
     if (element.id == 'lotus') {
@@ -676,8 +735,10 @@ class _GameplayLayoutState extends State<_GameplayLayout>
 
                 // Get progress
                 final collected = gameState.getObjectiveProgress(index);
-                final remaining =
-                    (objective.target - collected).clamp(0, objective.target);
+                final remaining = (objective.target - collected).clamp(
+                  0,
+                  objective.target,
+                );
                 final remainingString = remaining.toString();
                 final digitChars = remainingString.split('');
 
@@ -701,35 +762,61 @@ class _GameplayLayoutState extends State<_GameplayLayout>
                         ),
                       ),
                     if (tileDef != null) SizedBox(width: size.width * 0.01),
-                    // X prefix sprite
-                    SizedBox(
-                      width: digitHeight * 0.7,
-                      height: digitHeight * 0.7,
-                      child: Image.asset(
-                        'assets/numbers/x.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                    SizedBox(width: size.width * 0.005),
-                    // Number sprites
-                    ...digitChars.map((char) {
-                      return SizedBox(
-                        width: digitHeight * 0.6,
-                        height: digitHeight,
-                        child: Image.asset(
-                          'assets/numbers/number_$char.png',
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(
-                              child: Text(
-                                char,
-                                style: TextStyle(fontSize: digitHeight * 0.6),
+                    AnimatedSwitcher(
+                      duration: MediaQuery.disableAnimationsOf(context)
+                          ? Duration.zero
+                          : const Duration(milliseconds: 200),
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
+                      child: remaining == 0
+                          ? SizedBox(
+                              key: ValueKey('completed-$index'),
+                              width: digitHeight,
+                              height: digitHeight,
+                              child: Semantics(
+                                label: 'Objective complete',
+                                child: const Icon(
+                                  Icons.check_circle,
+                                  color: Color(0xFF4D8A3A),
+                                ),
                               ),
-                            );
-                          },
-                        ),
-                      );
-                    }),
+                            )
+                          : Row(
+                              key: ValueKey('remaining-$index-$remaining'),
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: digitHeight * 0.7,
+                                  height: digitHeight * 0.7,
+                                  child: Image.asset(
+                                    'assets/numbers/x.png',
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                SizedBox(width: size.width * 0.005),
+                                ...digitChars.map(
+                                  (char) => SizedBox(
+                                    width: digitHeight * 0.6,
+                                    height: digitHeight,
+                                    child: Image.asset(
+                                      'assets/numbers/number_$char.png',
+                                      fit: BoxFit.contain,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Center(
+                                                child: Text(
+                                                  char,
+                                                  style: TextStyle(
+                                                    fontSize: digitHeight * 0.6,
+                                                  ),
+                                                ),
+                                              ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
                   ],
                 );
               }),
@@ -782,8 +869,10 @@ class _GameplayLayoutState extends State<_GameplayLayout>
       builder: (context, _) {
         // Countdown: show remaining (target - collected), not collected so far
         final collected = gameState.getObjectiveProgress(index);
-        final remaining =
-            (objective.target - collected).clamp(0, objective.target);
+        final remaining = (objective.target - collected).clamp(
+          0,
+          objective.target,
+        );
 
         return Container(
           width: size.width,
@@ -889,8 +978,7 @@ class _GameplayLayoutState extends State<_GameplayLayout>
           iconWidget = ColorFiltered(
             colorFilter: ColorFilter.mode(
               Colors.black.withValues(alpha: 0.55),
-              BlendMode
-                  .srcATop, // srcATop preserves sprite shape and applies dark tint
+              BlendMode.srcATop, // srcATop preserves sprite shape and applies dark tint
             ),
             child: iconWidget,
           );
@@ -921,13 +1009,24 @@ class _GameplayLayoutState extends State<_GameplayLayout>
         Widget slotContent = Stack(
           clipBehavior:
               Clip.none, // allow badge to extend slightly below icon bounds
-          children: [
-            iconWidget,
-            countBadge,
-          ],
+          children: [iconWidget, countBadge],
         );
 
-        // Make draggable if count > 0
+        final accessibleSlot = Semantics(
+          button: canUse,
+          focusable: canUse,
+          enabled: canUse,
+          label: 'Booster $powerTypeId, $count available',
+          hint: 'Select a board tile and activate this booster, or drag it onto a tile.',
+          onTap: canUse
+              ? () => _boardViewportKey.currentState?.placeBoosterAtSelected(
+                  powerTypeId,
+                )
+              : null,
+          child: slotContent,
+        );
+
+        // Make draggable if count > 0; the semantics action also supports tap use.
         if (canUse) {
           return Draggable<int>(
             data: powerTypeId,
@@ -939,21 +1038,15 @@ class _GameplayLayoutState extends State<_GameplayLayout>
                 child: SizedBox(
                   width: size.width,
                   height: size.height,
-                  child: Image.asset(
-                    element.file!,
-                    fit: BoxFit.contain,
-                  ),
+                  child: Image.asset(element.file!, fit: BoxFit.contain),
                 ),
               ),
             ),
-            childWhenDragging: Opacity(
-              opacity: 0.3,
-              child: slotContent,
-            ),
-            child: slotContent,
+            childWhenDragging: Opacity(opacity: 0.3, child: slotContent),
+            child: accessibleSlot,
           );
         } else {
-          return slotContent;
+          return accessibleSlot;
         }
       },
     );
@@ -966,17 +1059,30 @@ class _GameplayLayoutState extends State<_GameplayLayout>
     }
 
     // Shake animation: quick horizontal movement
-    final shakeAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween<double>(begin: 0.0, end: -8.0), weight: 1),
-      TweenSequenceItem(tween: Tween<double>(begin: -8.0, end: 8.0), weight: 1),
-      TweenSequenceItem(tween: Tween<double>(begin: 8.0, end: -8.0), weight: 1),
-      TweenSequenceItem(tween: Tween<double>(begin: -8.0, end: 0.0), weight: 1),
-    ]).animate(
-      CurvedAnimation(
-        parent: _lotusShakeController,
-        curve: Curves.easeInOut,
-      ),
-    );
+    final shakeAnimation =
+        TweenSequence<double>([
+          TweenSequenceItem(
+            tween: Tween<double>(begin: 0.0, end: -8.0),
+            weight: 1,
+          ),
+          TweenSequenceItem(
+            tween: Tween<double>(begin: -8.0, end: 8.0),
+            weight: 1,
+          ),
+          TweenSequenceItem(
+            tween: Tween<double>(begin: 8.0, end: -8.0),
+            weight: 1,
+          ),
+          TweenSequenceItem(
+            tween: Tween<double>(begin: -8.0, end: 0.0),
+            weight: 1,
+          ),
+        ]).animate(
+          CurvedAnimation(
+            parent: _lotusShakeController,
+            curve: Curves.easeInOut,
+          ),
+        );
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -984,8 +1090,10 @@ class _GameplayLayoutState extends State<_GameplayLayout>
         // Trigger shake animation on tap
         _lotusShakeController.reset();
         _lotusShakeController.forward();
-        DebugLogger.log('Lotus tapped - shake animation triggered',
-            category: 'Lotus');
+        DebugLogger.log(
+          'Lotus tapped - shake animation triggered',
+          category: 'Lotus',
+        );
         // Action consequence will be implemented later
       },
       child: AnimatedBuilder(
@@ -993,10 +1101,7 @@ class _GameplayLayoutState extends State<_GameplayLayout>
         builder: (context, child) {
           return Transform.translate(
             offset: Offset(shakeAnimation.value, 0),
-            child: Image.asset(
-              element.file!,
-              fit: BoxFit.contain,
-            ),
+            child: Image.asset(element.file!, fit: BoxFit.contain),
           );
         },
       ),
@@ -1005,16 +1110,20 @@ class _GameplayLayoutState extends State<_GameplayLayout>
 
   /// Handle tap events for buttons
   void _handleTap(String id) {
-    DebugLogger.log('Button tapped: id=$id, isPaused=$_isPaused',
-        category: 'Button');
+    DebugLogger.log(
+      'Button tapped: id=$id, isPaused=$_isPaused',
+      category: 'Button',
+    );
     switch (id) {
       case 'pause':
         // Pause button: show pause screen if game is not already paused
         if (!_isPaused) {
           _showPauseScreen();
         } else {
-          DebugLogger.log('Game is already paused, pause button tap ignored',
-              category: 'PauseButton');
+          DebugLogger.log(
+            'Game is already paused, pause button tap ignored',
+            category: 'PauseButton',
+          );
         }
         // Note: If already paused, do nothing (pause screen is already showing)
         // Player must use the resume button in the pause screen to resume

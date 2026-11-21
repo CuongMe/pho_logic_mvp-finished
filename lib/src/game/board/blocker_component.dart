@@ -1,4 +1,5 @@
 import 'package:flame/components.dart';
+
 import '../model/coord.dart';
 import '../model/grid_model.dart';
 import '../utils/debug_logger.dart';
@@ -54,15 +55,10 @@ class BlockerComponent extends SpriteComponent
       final image = await game.images.load(assetPath);
       sprite = Sprite(image);
     } catch (e) {
-      DebugLogger.error('Failed to load blocker sprite from $filePath: $e',
-          category: 'BlockerComponent');
+      DebugLogger.error(
+        'Failed to load blocker sprite from $filePath: $e',
+        category: 'BlockerComponent',
+      );
     }
-  }
-
-  @override
-  void update(double dt) {
-    // Skip update entirely - blockers are static until they break
-    // Breaking is handled by VFX system, not update loop
-    // This saves ~10 function calls per frame on Windows
   }
 }

@@ -1,4 +1,5 @@
-﻿import 'dart:convert';
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -14,7 +15,6 @@ import '../../audio/bgm_manager.dart';
 import '../../audio/sfx_manager.dart';
 import '../gameplay/help_screen.dart';
 import '../settings/settings_screen.dart';
-
 
 /// Menu screen design data loaded from JSON
 class MenuScreenData {
@@ -105,21 +105,35 @@ class _MenuScreenState extends State<MenuScreen> {
   void initState() {
     super.initState();
     AppLogger.lifecycle('ðŸŽ¯ MenuScreen initState started');
-    
+
     try {
       _inventory = InventoryModel();
-      _inventory.load(); // Load from SharedPreferences or defaults
-      AppLogger.ui('Inventory loaded');
-      
+      _inventory.load().then(
+        (_) {
+          AppLogger.ui('Inventory loaded');
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          AppLogger.error(
+            'Failed to load inventory',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        },
+      );
+
       _loadMenuData();
-      
+
       // Start menu BGM
       BgmManager.instance.playMenuBgm();
       AppLogger.audio('Menu BGM started');
-      
+
       AppLogger.lifecycle('âœ… MenuScreen initState completed');
     } catch (e, stackTrace) {
-      AppLogger.error('Failed during MenuScreen initState', error: e, stackTrace: stackTrace);
+      AppLogger.error(
+        'Failed during MenuScreen initState',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -134,20 +148,26 @@ class _MenuScreenState extends State<MenuScreen> {
     try {
       AppLogger.ui('Loading menu design JSON...');
       // Load the menu design JSON from the new assets location
-      final jsonString = await rootBundle.loadString('assets/json_design/menu_screen.json');
+      final jsonString = await rootBundle.loadString(
+        'assets/json_design/menu_screen.json',
+      );
       AppLogger.ui('Menu JSON loaded, parsing...');
-      
+
       final jsonData = json.decode(jsonString);
       if (!mounted) return;
-      
+
       setState(() {
         _menuData = MenuScreenData.fromJson(jsonData);
         _isLoading = false;
       });
-      
+
       AppLogger.ui('âœ… Menu data loaded successfully');
     } catch (e, stackTrace) {
-      AppLogger.error('Failed to load menu data', error: e, stackTrace: stackTrace);
+      AppLogger.error(
+        'Failed to load menu data',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (!mounted) return;
       setState(() {
         _error = 'Failed to load menu data: $e';
@@ -159,15 +179,11 @@ class _MenuScreenState extends State<MenuScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_error != null) {
-      return Scaffold(
-        body: Center(child: Text(_error!)),
-      );
+      return Scaffold(body: Center(child: Text(_error!)));
     }
 
     return Scaffold(
@@ -204,9 +220,8 @@ class _MenuScreenState extends State<MenuScreen> {
     } catch (e) {
       AppLogger.error('Error handling free boost: $e', error: e);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       _isClaimingFreeBoost = false;
     }
@@ -229,9 +244,8 @@ class _MenuScreenState extends State<MenuScreen> {
     } catch (e) {
       AppLogger.error('Error handling desktop boost: $e', error: e);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -242,9 +256,8 @@ class _MenuScreenState extends State<MenuScreen> {
     } catch (e) {
       AppLogger.error('Error handling web boost: $e', error: e);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -448,10 +461,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 ),
                 child: const Text(
                   'OK',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -568,10 +578,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 ),
                 child: const Text(
                   'Awesome!',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -593,7 +600,6 @@ class _MenuLayout extends StatelessWidget {
     required this.inventory,
     required this.onBoostTap,
   });
-
 
   @override
   Widget build(BuildContext context) {
@@ -623,40 +629,46 @@ class _MenuLayout extends StatelessWidget {
       children: [
         // Background image (cover entire screen)
         Positioned.fill(
-          child: Image.asset(
-            menuData.background,
-            fit: BoxFit.cover,
-          ),
+          child: Image.asset(menuData.background, fit: BoxFit.cover),
         ),
 
         // Menu elements
-        ...menuData.elements.map((element) => _buildElement(element, scale, xOffset, yOffset)),
+        ...menuData.elements.map(
+          (element) => _buildElement(element, scale, xOffset, yOffset),
+        ),
       ],
     );
   }
 
   /// Build a single menu element widget
-  Widget _buildElement(MenuElement element, double scale, double xOffset, double yOffset) {
+  Widget _buildElement(
+    MenuElement element,
+    double scale,
+    double xOffset,
+    double yOffset,
+  ) {
     // Calculate actual position based on anchor and centering offsets
-    Offset actualPosition = _calculatePosition(element, scale, xOffset, yOffset);
+    Offset actualPosition = _calculatePosition(
+      element,
+      scale,
+      xOffset,
+      yOffset,
+    );
 
     // Calculate actual size
-    Size actualSize = Size(element.size.width * scale, element.size.height * scale);
+    Size actualSize = Size(
+      element.size.width * scale,
+      element.size.height * scale,
+    );
 
     Widget child;
 
     if (element.type == 'image') {
-      child = Image.asset(
-        element.file,
-        fit: BoxFit.contain,
-      );
+      child = Image.asset(element.file, fit: BoxFit.contain);
     } else if (element.type == 'button') {
       child = _AnimatedMenuButton(
         onTap: () => _handleButtonTap(element.id, actualPosition, actualSize),
-        child: Image.asset(
-          element.file,
-          fit: BoxFit.contain,
-        ),
+        child: Image.asset(element.file, fit: BoxFit.contain),
       );
     } else {
       child = Container(); // Unknown type
@@ -672,10 +684,21 @@ class _MenuLayout extends StatelessWidget {
   }
 
   /// Calculate the actual screen position for an element based on its anchor
-  Offset _calculatePosition(MenuElement element, double scale, double xOffset, double yOffset) {
+  Offset _calculatePosition(
+    MenuElement element,
+    double scale,
+    double xOffset,
+    double yOffset,
+  ) {
     // Force center-only anchoring: treat element.position as center
-    final x = xOffset + element.position.dx * scale - (element.size.width * scale) / 2;
-    final y = yOffset + element.position.dy * scale - (element.size.height * scale) / 2;
+    final x =
+        xOffset +
+        element.position.dx * scale -
+        (element.size.width * scale) / 2;
+    final y =
+        yOffset +
+        element.position.dy * scale -
+        (element.size.height * scale) / 2;
     return Offset(x, y);
   }
 
@@ -737,16 +760,14 @@ class _AnimatedMenuButton extends StatefulWidget {
   final VoidCallback onTap;
   final Widget child;
 
-  const _AnimatedMenuButton({
-    required this.onTap,
-    required this.child,
-  });
+  const _AnimatedMenuButton({required this.onTap, required this.child});
 
   @override
   State<_AnimatedMenuButton> createState() => _AnimatedMenuButtonState();
 }
 
-class _AnimatedMenuButtonState extends State<_AnimatedMenuButton> with SingleTickerProviderStateMixin {
+class _AnimatedMenuButtonState extends State<_AnimatedMenuButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -757,9 +778,10 @@ class _AnimatedMenuButtonState extends State<_AnimatedMenuButton> with SingleTic
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -774,11 +796,7 @@ class _AnimatedMenuButtonState extends State<_AnimatedMenuButton> with SingleTic
 
   void _handleTapUp(TapUpDetails details) {
     _controller.reverse();
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        widget.onTap();
-      }
-    });
+    widget.onTap();
   }
 
   void _handleTapCancel() {
@@ -791,11 +809,7 @@ class _AnimatedMenuButtonState extends State<_AnimatedMenuButton> with SingleTic
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
       onTapCancel: _handleTapCancel,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
-      ),
+      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
     );
   }
 }
-
