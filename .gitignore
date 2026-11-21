@@ -47,5 +47,6 @@ app.*.map.json
 
 # Android signing keys - DO NOT COMMIT
 /android/key.properties
+/android/app/keystore_info.txt
 /android/app/*.jks
 /android/app/*.keystore
