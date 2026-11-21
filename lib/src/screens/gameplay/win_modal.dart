@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../utils/animation_helpers.dart';
+
+import '../../app/routes.dart';
 
 /// Win modal that displays when player completes all objectives
 class WinModal extends StatefulWidget {
@@ -20,73 +21,94 @@ class WinModal extends StatefulWidget {
   State<WinModal> createState() => _WinModalState();
 }
 
-class _WinModalState extends State<WinModal> with SingleTickerProviderStateMixin {
+class _WinModalState extends State<WinModal>
+    with SingleTickerProviderStateMixin {
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _scaleController = createScaleAnimation(this);
-    _scaleAnimation = createScaleCurvedAnimation(_scaleController);
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeOutCubic),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _scaleController,
+      curve: Curves.easeOut,
+    );
     _scaleController.forward();
   }
 
   @override
   void dispose() {
-    disposeAnimation(_scaleController);
+    _scaleController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Material(
       color: Colors.black54,
       child: Center(
         child: SingleChildScrollView(
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Win board image
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.85,
-                    maxHeight: MediaQuery.of(context).size.height * 0.5,
+          child: FadeTransition(
+            opacity: reduceMotion
+                ? const AlwaysStoppedAnimation(1)
+                : _fadeAnimation,
+            child: ScaleTransition(
+              scale: reduceMotion
+                  ? const AlwaysStoppedAnimation(1)
+                  : _scaleAnimation,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Win board image
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.85,
+                      maxHeight: MediaQuery.of(context).size.height * 0.5,
+                    ),
+                    child: Image.asset(
+                      'assets/win_lose/win_board.png',
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  child: Image.asset(
-                    'assets/win_lose/win_board.png',
-                    fit: BoxFit.contain,
+
+                  const SizedBox(height: 30),
+
+                  // Buttons row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _WinButton(
+                        label: 'Home',
+                        onTap: widget.onHome,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 12),
+                      _WinButton(
+                        label: 'Restart',
+                        onTap: widget.onRestart,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 12),
+                      _WinButton(
+                        label: widget.level == Routes.campaignStageCount
+                            ? 'World'
+                            : 'Next',
+                        onTap: widget.onNextLevel,
+                        color: Colors.green,
+                      ),
+                    ],
                   ),
-                ),
-                
-                const SizedBox(height: 30),
-                
-                // Buttons row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _WinButton(
-                      label: 'Home',
-                      onTap: widget.onHome,
-                      color: Colors.orange,
-                    ),
-                    const SizedBox(width: 12),
-                    _WinButton(
-                      label: 'Restart',
-                      onTap: widget.onRestart,
-                      color: Colors.blue,
-                    ),
-                    const SizedBox(width: 12),
-                    _WinButton(
-                      label: 'Next',
-                      onTap: widget.onNextLevel,
-                      color: Colors.green,
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

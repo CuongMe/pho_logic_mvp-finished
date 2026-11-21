@@ -10,6 +10,11 @@ import '../utils/app_logger.dart';
 /// Route constants for the PhoLogic app.
 /// These define the navigation paths used throughout the app.
 class Routes {
+  static const int campaignStageCount = 25;
+
+  static int? nextStageId(int stageId) =>
+      stageId >= 1 && stageId < campaignStageCount ? stageId + 1 : null;
+
   // Main menu screen
   static const String menu = '/menu';
 
@@ -41,7 +46,7 @@ class Routes {
     };
 
     // Generate gameplay routes for all 25 levels dynamically
-    for (int i = 1; i <= 25; i++) {
+    for (int i = 1; i <= campaignStageCount; i++) {
       routes['/gameplay/$i'] = (context) {
         AppLogger.navigation('Navigating to GameplayScreen (Stage $i)');
         return GameplayScreen1(stageId: i);

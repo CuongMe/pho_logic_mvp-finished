@@ -2,6 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+
 import '../model/coord.dart';
 import '../model/grid_model.dart';
 import '../stages/stage_data.dart';
@@ -25,6 +26,7 @@ class BoardGame extends FlameGame with TapCallbacks {
   final int cols;
   final GridModel gridModel;
   final StageData stageData;
+  bool reducedMotion = false;
 
   // Computed grid layout values
   late final double tileSize;
@@ -104,8 +106,7 @@ class BoardGame extends FlameGame with TapCallbacks {
 
   // Input handling: selected tile for swap
   Coord? _selectedCoord;
-  TileComponent?
-      _selectedTileComponent; // Currently selected tile component (for highlighting)
+  TileComponent? _selectedTileComponent; // Currently selected tile component (for highlighting)
   // Drag-hover highlight (from belt drag-and-drop)
   TileComponent? _hoverTileComponent;
 
@@ -114,9 +115,14 @@ class BoardGame extends FlameGame with TapCallbacks {
 
   // Callback for when no possible moves are detected (to show modal)
   Future<void> Function()? onNoMovesDetected;
+  VoidCallback? onTurnResolved;
+  void Function(Object error)? onStageError;
 
   // Lock to prevent overlapping swaps/cascades (race condition prevention)
   bool _isBusy = false;
+
+  Coord? get selectedCoord => _selectedCoord;
+  bool get isBusy => _isBusy;
 
   /// Set game state model for tracking moves and objectives
   void setGameStateModel(GameStateModel gameStateModel) {
@@ -131,12 +137,12 @@ class BoardGame extends FlameGame with TapCallbacks {
     required double viewportWidth,
     required double viewportHeight,
   }) : super(
-          // Set viewport size to match the widget size
-          camera: CameraComponent.withFixedResolution(
-            width: viewportWidth,
-            height: viewportHeight,
-          ),
-        ) {
+         // Set viewport size to match the widget size
+         camera: CameraComponent.withFixedResolution(
+           width: viewportWidth,
+           height: viewportHeight,
+         ),
+       ) {
     // Compute grid layout from viewport size
     tileSize = (viewportWidth / cols < viewportHeight / rows)
         ? viewportWidth / cols
@@ -150,17 +156,19 @@ class BoardGame extends FlameGame with TapCallbacks {
     gridTop = (viewportHeight - gridHeight) / 2;
 
     // Prebuild lookup maps for performance
-    assert(stageData.bedTypes.isNotEmpty,
-        'StageData must have at least one bed type');
-    assert(stageData.tiles.isNotEmpty,
-        'StageData must have at least one tile type');
+    assert(
+      stageData.bedTypes.isNotEmpty,
+      'StageData must have at least one bed type',
+    );
+    assert(
+      stageData.tiles.isNotEmpty,
+      'StageData must have at least one tile type',
+    );
 
     bedTypeById = {
       for (final bedType in stageData.bedTypes) bedType.id: bedType,
     };
-    tileDefById = {
-      for (final tileDef in stageData.tiles) tileDef.id: tileDef,
-    };
+    tileDefById = {for (final tileDef in stageData.tiles) tileDef.id: tileDef};
 
     // Add special tile definitions (power-ups)
     // These are not in stage JSON, so we define them here
@@ -212,11 +220,13 @@ class BoardGame extends FlameGame with TapCallbacks {
     // This callback does BOTH: spawn particles and update objective progress
     controller.setOnCellsClearedWithTypes((victims) async {
       DebugLogger.log(
-          'BoardGame callback: received ${victims.length} victim tiles',
-          category: 'BoardGame');
+        'BoardGame callback: received ${victims.length} victim tiles',
+        category: 'BoardGame',
+      );
       DebugLogger.log(
-          'BoardGame callback: victim types: ${victims.values.toSet()}',
-          category: 'BoardGame');
+        'BoardGame callback: victim types: ${victims.values.toSet()}',
+        category: 'BoardGame',
+      );
 
       // 1) Spawn particles (only when we have victim tiles).
       // Some VFX (e.g. Party Popper projectiles) spawn bursts manually for timing,
@@ -246,7 +256,10 @@ class BoardGame extends FlameGame with TapCallbacks {
     controller.setOnBlockerBreak((coord) async {
       final blocker = blockerComponents[coord];
       if (blocker != null) {
-        DebugLogger.log('Playing blocker break VFX at $coord', category: 'BoardGame');
+        DebugLogger.log(
+          'Playing blocker break VFX at $coord',
+          category: 'BoardGame',
+        );
         await BlockerBreakVfx.play(game: this, coord: coord, blocker: blocker);
       }
     });
@@ -319,8 +332,9 @@ class BoardGame extends FlameGame with TapCallbacks {
           center: worldPos,
           tileSize: tileSize,
           crumbSprite: crumbSprite,
-          sparkleSprite:
-              isBigClear ? null : sparkleSprite, // Skip sparkles for big clears
+          sparkleSprite: isBigClear
+              ? null
+              : sparkleSprite, // Skip sparkles for big clears
           isSpecialClear: isSpecialClear,
         );
 
@@ -350,21 +364,24 @@ class BoardGame extends FlameGame with TapCallbacks {
         crumbParticleByTileId[entry.key] = Sprite(image);
       } catch (e) {
         DebugLogger.error(
-            'Failed to load crumb particle sprite: ${entry.value} - $e',
-            category: 'BoardGame');
+          'Failed to load crumb particle sprite: ${entry.value} - $e',
+          category: 'BoardGame',
+        );
         // Continue loading other sprites even if one fails
       }
     }
 
     // Load sparkle sprite
     try {
-      final sparkleImage =
-          await images.load('sprites/particles/sparkle_particle.png');
+      final sparkleImage = await images.load(
+        'sprites/particles/sparkle_particle.png',
+      );
       sparkleSprite = Sprite(sparkleImage);
     } catch (e) {
       DebugLogger.error(
-          'Failed to load sparkle sprite: sprites/particles/sparkle_particle.png - $e',
-          category: 'BoardGame');
+        'Failed to load sparkle sprite: sprites/particles/sparkle_particle.png - $e',
+        category: 'BoardGame',
+      );
     }
 
     // Load scooter blocker particles
@@ -373,8 +390,9 @@ class BoardGame extends FlameGame with TapCallbacks {
       await images.load('sprites/particles/scooter_particle_2.png');
     } catch (e) {
       DebugLogger.error(
-          'Failed to load scooter particles: $e',
-          category: 'BoardGame');
+        'Failed to load scooter particles: $e',
+        category: 'BoardGame',
+      );
     }
   }
 
@@ -436,13 +454,23 @@ class BoardGame extends FlameGame with TapCallbacks {
     // This should match our world coordinate system
     final worldPos = event.canvasPosition;
     DebugLogger.boardGame(
-        'Tap at canvasPosition: $worldPos (gridLeft: $gridLeft, gridTop: $gridTop, tileSize: $tileSize)');
+      'Tap at canvasPosition: $worldPos (gridLeft: $gridLeft, gridTop: $gridTop, tileSize: $tileSize)',
+    );
 
     final coord = worldToCoord(worldPos);
 
+    _handleTapCoord(coord);
+  }
+
+  /// Exposes the same selection and swap behavior to Flutter accessibility actions.
+  void tapCell(Coord coord) => _handleTapCoord(coord);
+
+  void _handleTapCoord(Coord? coord) {
+    if (_isBusy) return;
+
     if (coord == null) {
       // Tapped outside board - deselect
-      DebugLogger.boardGame('Tap outside board at $worldPos');
+      DebugLogger.boardGame('Tap outside board');
       _deselectTile();
       return;
     }
@@ -462,7 +490,8 @@ class BoardGame extends FlameGame with TapCallbacks {
       // First tap - select this tile
       _selectTile(coord, tile);
       DebugLogger.boardGame(
-          'Selected tile at $coord (tileTypeId: ${tile.tileTypeId}, instanceId: ${tile.instanceId})');
+        'Selected tile at $coord (tileTypeId: ${tile.tileTypeId}, instanceId: ${tile.instanceId})',
+      );
       return;
     }
 
@@ -478,7 +507,8 @@ class BoardGame extends FlameGame with TapCallbacks {
     if (!_selectedCoord!.isAdjacent(coord)) {
       // Not adjacent - select new tile instead
       DebugLogger.boardGame(
-          'Not adjacent: $_selectedCoord vs $coord - selecting new tile');
+        'Not adjacent: $_selectedCoord vs $coord - selecting new tile',
+      );
       _selectTile(coord, tile);
       return;
     }
@@ -563,22 +593,26 @@ class BoardGame extends FlameGame with TapCallbacks {
 
           // Debug: Log received activated specials
           DebugLogger.boardGame(
-              'onSpecialActivated callback received ${activatedSpecials.length} activated special(s)');
+            'onSpecialActivated callback received ${activatedSpecials.length} activated special(s)',
+          );
 
           for (final entry in activatedSpecials.entries) {
             final coord = entry.key;
             final typeId = entry.value;
 
             DebugLogger.boardGame(
-                'Activated special: coord=$coord, typeId=$typeId');
+              'Activated special: coord=$coord, typeId=$typeId',
+            );
 
             // Read instanceId from GridModel (source of truth)
             if (coord.row < 0 ||
                 coord.row >= gridModel.rows ||
                 coord.col < 0 ||
                 coord.col >= gridModel.cols) {
-              DebugLogger.error('coord $coord is out of bounds! Skipping VFX.',
-                  category: 'BoardGame');
+              DebugLogger.error(
+                'coord $coord is out of bounds! Skipping VFX.',
+                category: 'BoardGame',
+              );
               continue;
             }
 
@@ -587,8 +621,9 @@ class BoardGame extends FlameGame with TapCallbacks {
 
             if (instanceId == null) {
               DebugLogger.error(
-                  'cell at $coord has no tileInstanceId! Skipping VFX.',
-                  category: 'BoardGame');
+                'cell at $coord has no tileInstanceId! Skipping VFX.',
+                category: 'BoardGame',
+              );
               continue;
             }
 
@@ -596,14 +631,16 @@ class BoardGame extends FlameGame with TapCallbacks {
             final tile = getTileByInstanceId(instanceId);
             if (tile == null) {
               DebugLogger.error(
-                  'getTileByInstanceId($instanceId) returned null for coord $coord! Skipping VFX.',
-                  category: 'BoardGame');
+                'getTileByInstanceId($instanceId) returned null for coord $coord! Skipping VFX.',
+                category: 'BoardGame',
+              );
               continue;
             }
 
             instanceIdSpecials[instanceId] = typeId;
             DebugLogger.boardGame(
-                'Converted coord=$coord to instanceId=$instanceId (from GridModel)');
+              'Converted coord=$coord to instanceId=$instanceId (from GridModel)',
+            );
 
             // Convert metadata
             final metaEntry = vfxMetadata[coord];
@@ -634,9 +671,13 @@ class BoardGame extends FlameGame with TapCallbacks {
       } else {
         DebugLogger.boardGame('Swap failed: $a <-> $b');
       }
+    } catch (error) {
+      DebugLogger.error('Board turn failed: $error', category: 'BoardGame');
+      onStageError?.call(error);
     } finally {
       // Always release the lock, even if an error occurs
       _isBusy = false;
+      onTurnResolved?.call();
     }
   }
 
@@ -645,11 +686,17 @@ class BoardGame extends FlameGame with TapCallbacks {
   /// This is the single unified path for all tile spawning/updating
   /// Note: Does NOT update instanceAtCoord/coordByInstanceId maps - caller should handle map updates
   /// (This prevents conflicts when called from syncFromModel which manages maps atomically)
-  Future<void> spawnOrUpdateTileAt(Coord coord, int tileTypeId,
-      {int? instanceId, bool updateMaps = false}) async {
+  Future<void> spawnOrUpdateTileAt(
+    Coord coord,
+    int tileTypeId, {
+    int? instanceId,
+    bool updateMaps = false,
+  }) async {
     if (!isPlayableCell(coord)) {
-      DebugLogger.warn('Attempted to spawn tile at non-playable coord $coord',
-          category: 'BoardGame');
+      DebugLogger.warn(
+        'Attempted to spawn tile at non-playable coord $coord',
+        category: 'BoardGame',
+      );
       return;
     }
 
@@ -680,7 +727,8 @@ class BoardGame extends FlameGame with TapCallbacks {
       add(component);
       tilesByInstanceId[finalInstanceId] = component;
       DebugLogger.boardGame(
-          'Spawned tile at $coord (instanceId: $finalInstanceId, tileTypeId: $tileTypeId)');
+        'Spawned tile at $coord (instanceId: $finalInstanceId, tileTypeId: $tileTypeId)',
+      );
     } else {
       // Update existing component
       if (component.tileTypeId != tileTypeId) {
@@ -734,18 +782,24 @@ class BoardGame extends FlameGame with TapCallbacks {
           final component = tilesByInstanceId[cell.tileInstanceId];
           if (component == null) {
             DebugLogger.warn(
-                'Missing TileComponent for instanceId ${cell.tileInstanceId} at $coord',
-                category: 'BoardGame');
+              'Missing TileComponent for instanceId ${cell.tileInstanceId} at $coord',
+              category: 'BoardGame',
+            );
             // Fix: spawn the tile
-            await spawnOrUpdateTileAt(coord, cell.tileTypeId!,
-                instanceId: cell.tileInstanceId, updateMaps: true);
+            await spawnOrUpdateTileAt(
+              coord,
+              cell.tileTypeId!,
+              instanceId: cell.tileInstanceId,
+              updateMaps: true,
+            );
             fixCount++;
           } else {
             // Check 2: TileComponent coord must match where instanceId lives in GridModel
             if (component.coord != coord) {
               DebugLogger.warn(
-                  'TileComponent coord mismatch: component.coord=${component.coord}, GridModel=$coord (instanceId: ${cell.tileInstanceId})',
-                  category: 'BoardGame');
+                'TileComponent coord mismatch: component.coord=${component.coord}, GridModel=$coord (instanceId: ${cell.tileInstanceId})',
+                category: 'BoardGame',
+              );
               // Fix: rebind coord/position from GridModel
               // Use moveToCoord with same coord to reset movement state
               component.coord = coord;
@@ -764,12 +818,15 @@ class BoardGame extends FlameGame with TapCallbacks {
             // Check 3: TileComponent tileTypeId must match GridModel
             if (component.tileTypeId != cell.tileTypeId) {
               DebugLogger.warn(
-                  'TileComponent tileTypeId mismatch: component=${component.tileTypeId}, GridModel=${cell.tileTypeId} (instanceId: ${cell.tileInstanceId})',
-                  category: 'BoardGame');
+                'TileComponent tileTypeId mismatch: component=${component.tileTypeId}, GridModel=${cell.tileTypeId} (instanceId: ${cell.tileInstanceId})',
+                category: 'BoardGame',
+              );
               // Fix: update type (async, but we'll trigger it)
               component.setType(cell.tileTypeId!).catchError((e) {
-                DebugLogger.error('Error updating tile type: $e',
-                    category: 'BoardGame');
+                DebugLogger.error(
+                  'Error updating tile type: $e',
+                  category: 'BoardGame',
+                );
               });
               fixCount++;
             }
@@ -786,8 +843,9 @@ class BoardGame extends FlameGame with TapCallbacks {
 
       if (expectedCoord == null) {
         DebugLogger.warn(
-            'TileComponent has no coord mapping (instanceId: $instanceId)',
-            category: 'BoardGame');
+          'TileComponent has no coord mapping (instanceId: $instanceId)',
+          category: 'BoardGame',
+        );
         orphanedComponents.add(instanceId);
         continue;
       }
@@ -795,8 +853,9 @@ class BoardGame extends FlameGame with TapCallbacks {
       final cell = gridModel.cells[expectedCoord.row][expectedCoord.col];
       if (cell.tileInstanceId != instanceId) {
         DebugLogger.warn(
-            'TileComponent instanceId not found at expected coord $expectedCoord (instanceId: $instanceId)',
-            category: 'BoardGame');
+          'TileComponent instanceId not found at expected coord $expectedCoord (instanceId: $instanceId)',
+          category: 'BoardGame',
+        );
         orphanedComponents.add(instanceId);
       }
     }
@@ -863,8 +922,11 @@ class BoardGame extends FlameGame with TapCallbacks {
 
           // Create component if missing (use unified spawn function)
           if (component == null) {
-            await spawnOrUpdateTileAt(coord, tileTypeId,
-                instanceId: instanceId);
+            await spawnOrUpdateTileAt(
+              coord,
+              tileTypeId,
+              instanceId: instanceId,
+            );
             // Component is now created and registered, continue to next cell
             continue;
           } else {
@@ -955,8 +1017,10 @@ class BoardGame extends FlameGame with TapCallbacks {
             // Get file path from cell (populated from JSON)
             final filePath = cell.blockerFilePath;
             if (filePath == null) {
-              DebugLogger.error('Blocker at $coord has no filePath! Skipping.',
-                  category: 'BoardGame');
+              DebugLogger.error(
+                'Blocker at $coord has no filePath! Skipping.',
+                category: 'BoardGame',
+              );
               continue;
             }
 
@@ -1037,8 +1101,12 @@ class BoardGame extends FlameGame with TapCallbacks {
         // Add tile component (foreground) using unified spawn function
         // InstanceIds should already be initialized by controller.initializeInstanceIds()
         if (cell.tileTypeId != null && cell.tileInstanceId != null) {
-          await spawnOrUpdateTileAt(coord, cell.tileTypeId!,
-              instanceId: cell.tileInstanceId, updateMaps: true);
+          await spawnOrUpdateTileAt(
+            coord,
+            cell.tileTypeId!,
+            instanceId: cell.tileInstanceId,
+            updateMaps: true,
+          );
         }
       }
     }

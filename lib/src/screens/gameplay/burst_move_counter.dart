@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 /// Burst counter widget for displaying moves with animations
@@ -6,7 +7,7 @@ import 'package:flutter/material.dart';
 /// - Pop scale animation when value changes
 /// - Small particle burst behind the number
 /// - AnimatedSwitcher for smooth digit transitions
-/// - Slow pulse when moves are low
+/// - One warning pulse when moves first enter the low range
 class BurstMoveCounter extends StatefulWidget {
   final int moves;
   final double height;
@@ -55,25 +56,23 @@ class _BurstMoveCounterState extends State<BurstMoveCounter>
     // Pulse animation controller for low moves
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 300),
     );
-    _pulse = Tween<double>(begin: 1.0, end: 1.08).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _pulse = TweenSequence<double>(
+      [
+        TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.08), weight: 1),
+        TweenSequenceItem(tween: Tween(begin: 1.08, end: 1.0), weight: 1),
+      ],
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeOut));
 
     // Initial idle state
     _c.value = 1.0;
-
-    // Start pulse if moves are low
-    if (widget.moves <= widget.lowMovesThreshold) {
-      _pulseController.repeat(reverse: true);
-    }
   }
 
   @override
   void didUpdateWidget(covariant BurstMoveCounter oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Trigger pop animation when value changes
     if (widget.moves != _oldValue) {
       _oldValue = widget.moves;
@@ -83,17 +82,16 @@ class _BurstMoveCounterState extends State<BurstMoveCounter>
         ..forward();
     }
 
-    // Start/stop pulse based on moves threshold
-    if (widget.moves <= widget.lowMovesThreshold) {
-      if (!_pulseController.isAnimating) {
-        _pulseController.repeat(reverse: true);
-      }
-    } else {
-      if (_pulseController.isAnimating) {
-        _pulseController
-          ..stop()
-          ..reset();
-      }
+    final enteredLowMoves =
+        oldWidget.moves > oldWidget.lowMovesThreshold &&
+        widget.moves <= widget.lowMovesThreshold;
+    if (enteredLowMoves) {
+      _pulseController.forward(from: 0);
+    } else if (widget.moves > widget.lowMovesThreshold &&
+        _pulseController.isAnimating) {
+      _pulseController
+        ..stop()
+        ..reset();
     }
   }
 
@@ -108,11 +106,12 @@ class _BurstMoveCounterState extends State<BurstMoveCounter>
   Widget build(BuildContext context) {
     final h = widget.height;
     final isLow = widget.moves <= widget.lowMovesThreshold;
-    
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
     final numberStyle = TextStyle(
       fontSize: h * 0.5,
       fontWeight: FontWeight.w900,
-      color: isLow 
+      color: isLow
           ? const Color(0xFFFF6B6B) // Red when low
           : const Color(0xFFFFE9B5), // Warm highlight when normal
       shadows: const [
@@ -126,9 +125,9 @@ class _BurstMoveCounterState extends State<BurstMoveCounter>
         animation: Listenable.merge([_c, _pulse]),
         builder: (context, child) {
           final popScale = 1.0 + (0.10 * _pop.value); // Pop animation
-          final pulseScale = isLow ? _pulse.value : 1.0; // Pulse when low
+          final pulseScale = isLow && !reduceMotion ? _pulse.value : 1.0;
           final scale = popScale * pulseScale;
-          
+
           return Transform.scale(
             scale: scale,
             child: Stack(
@@ -177,17 +176,21 @@ class _BurstMoveCounterState extends State<BurstMoveCounter>
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFFFFD28A), // Warm wood color
                   shadows: const [
-                    Shadow(blurRadius: 2, offset: Offset(0, 1), color: Colors.black26),
+                    Shadow(
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                      color: Colors.black26,
+                    ),
                   ],
                 ),
               ),
               SizedBox(width: h * 0.1),
               AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
-                transitionBuilder: (child, anim) => ScaleTransition(
-                  scale: anim,
-                  child: child,
-                ),
+                duration: reduceMotion
+                    ? Duration.zero
+                    : const Duration(milliseconds: 160),
+                transitionBuilder: (child, anim) =>
+                    ScaleTransition(scale: anim, child: child),
                 child: Text(
                   '${widget.moves}',
                   key: ValueKey(widget.moves),

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/foundation.dart';
+
 import '../model/coord.dart';
 import '../model/grid_model.dart';
 import '../model/match_result.dart';
@@ -50,21 +52,18 @@ class BoardController {
     required this.gridModel,
     required this.stageData,
     required this.sfxManager, // Inject SfxManager instance
-  })  : rows = gridModel.rows,
-        cols = gridModel.cols {
-    _rng = Random();
+    Random? random,
+  }) : rows = gridModel.rows,
+       cols = gridModel.cols {
+    _rng = random ?? Random();
     _initializePicker();
-    _tileSpawner = SpecialTileSpawner(
-      rng: _rng!,
-    );
+    _tileSpawner = SpecialTileSpawner(rng: _rng!);
     _activationResolver = SpecialActivationResolver(
       spawner: _tileSpawner,
       rows: rows,
       cols: cols,
     );
-    _comboResolver = SpecialComboResolver(
-      rng: _rng!,
-    );
+    _comboResolver = SpecialComboResolver(rng: _rng!);
   }
 
   /// Play match sound using bloop for all tile matches
@@ -90,8 +89,10 @@ class BoardController {
     }).toList();
 
     if (_spawnableTiles.isEmpty) {
-      DebugLogger.warn('No spawnable tiles after filtering specials',
-          category: 'BoardController');
+      DebugLogger.warn(
+        'No spawnable tiles after filtering specials',
+        category: 'BoardController',
+      );
       return;
     }
 
@@ -137,34 +138,34 @@ class BoardController {
   /// Only rerolls normal tiles (not special tiles - see _isSpecial())
   /// Respects allowInitialMatches setting from stageData
   void stabilizeInitialBoard() {
-    if (stageData.allowInitialMatches) {
-      return; // Skip stabilization if initial matches are allowed
-    }
-
     int rerollCount = 0;
     const maxRerolls = 50; // Safety cap to prevent infinite loops
 
     while (rerollCount < maxRerolls) {
       final matchResult = detectMatches();
+      final hasForbiddenMatches =
+          matchResult.hasMatches && !stageData.allowInitialMatches;
 
-      if (!matchResult.hasMatches) {
+      if (!hasForbiddenMatches) {
         // No matches found - check if board has valid moves
         if (hasPossibleMove()) {
           // Board is stable AND solvable
           if (rerollCount > 0) {
             DebugLogger.boardController(
-                'Board stabilized after $rerollCount reroll(s) with valid moves');
+              'Board stabilized after $rerollCount reroll(s) with valid moves',
+            );
           }
           return;
         }
         // No matches but also no valid moves - need to reroll to create solvability
         DebugLogger.boardController(
-            'Board has no matches but also no valid moves - rerolling to create solvability');
+          'Board has no matches but also no valid moves - rerolling to create solvability',
+        );
       }
 
       // Reroll all matched cells with new normal tiles
       // OR reroll random cells if no matches but no valid moves
-      if (matchResult.hasMatches) {
+      if (hasForbiddenMatches) {
         // Reroll matched cells
         for (final match in matchResult.matches) {
           for (final coord in match.cells) {
@@ -188,18 +189,24 @@ class BoardController {
         for (int row = 0; row < rows; row++) {
           for (int col = 0; col < cols; col++) {
             final cell = gridModel.cells[row][col];
-            if (cell.bedId != null && cell.bedId != -1 && 
-                cell.tileTypeId != null && !cell.isBlocked && !_isSpecial(cell.tileTypeId)) {
+            if (cell.bedId != null &&
+                cell.bedId != -1 &&
+                cell.tileTypeId != null &&
+                !cell.isBlocked &&
+                !_isSpecial(cell.tileTypeId)) {
               playableCells.add(Coord(row, col));
             }
           }
         }
-        
+
         if (playableCells.isNotEmpty) {
           // Reroll 20% of playable cells (or at least 3)
-          final rerollAmount = (playableCells.length * 0.2).ceil().clamp(3, playableCells.length);
+          final rerollAmount = (playableCells.length * 0.2).ceil().clamp(
+            3,
+            playableCells.length,
+          );
           playableCells.shuffle(_rng);
-          
+
           for (int i = 0; i < rerollAmount; i++) {
             final coord = playableCells[i];
             final cell = gridModel.cells[coord.row][coord.col];
@@ -216,9 +223,75 @@ class BoardController {
     }
 
     if (rerollCount >= maxRerolls) {
-      DebugLogger.warn('Board stabilization hit max rerolls ($maxRerolls)',
-          category: 'BoardController');
+      DebugLogger.warn(
+        'Board stabilization hit max rerolls ($maxRerolls)',
+        category: 'BoardController',
+      );
     }
+    if ((!stageData.allowInitialMatches && detectMatches().hasMatches) ||
+        !hasPossibleMove()) {
+      if (!_installPlayablePattern()) {
+        throw StateError(
+          'Stage ${stageData.stageKey} could not create a stable board with a legal move',
+        );
+      }
+    }
+  }
+
+  bool _installPlayablePattern() {
+    if (_spawnableTiles.length < 2) return false;
+    const pattern = [
+      [0, 1, 0],
+      [0, 0, 1],
+      [1, 0, 0],
+    ];
+
+    for (var top = 0; top <= rows - 3; top++) {
+      for (var left = 0; left <= cols - 3; left++) {
+        final coords = [
+          for (var row = 0; row < 3; row++)
+            for (var column = 0; column < 3; column++)
+              Coord(top + row, left + column),
+        ];
+        if (coords.any((coord) {
+          final cell = gridModel.cells[coord.row][coord.col];
+          return cell.bedId == null ||
+              cell.bedId == -1 ||
+              cell.isBlocked ||
+              cell.tileTypeId == null ||
+              _isSpecial(cell.tileTypeId);
+        })) {
+          continue;
+        }
+
+        final previousTypes = coords
+            .map((coord) => gridModel.cells[coord.row][coord.col].tileTypeId)
+            .toList();
+        for (var first = 0; first < _spawnableTiles.length; first++) {
+          for (
+            var second = first + 1;
+            second < _spawnableTiles.length;
+            second++
+          ) {
+            for (var row = 0; row < 3; row++) {
+              for (var column = 0; column < 3; column++) {
+                final coord = Coord(top + row, left + column);
+                gridModel.cells[coord.row][coord.col].tileTypeId =
+                    _spawnableTiles[pattern[row][column] == 0 ? first : second]
+                        .id;
+              }
+            }
+            if (!detectMatches().hasMatches && hasPossibleMove()) return true;
+            for (var index = 0; index < coords.length; index++) {
+              final coord = coords[index];
+              gridModel.cells[coord.row][coord.col].tileTypeId =
+                  previousTypes[index];
+            }
+          }
+        }
+      }
+    }
+    return false;
   }
 
   /// Check if two cells can be swapped
@@ -249,24 +322,28 @@ class BoardController {
     // Check if both have tiles
     if (cellA.tileTypeId == null || cellA.tileInstanceId == null) {
       DebugLogger.swap(
-          'CanSwap: cellA at $a has no tile (tileTypeId: ${cellA.tileTypeId}, tileInstanceId: ${cellA.tileInstanceId})');
+        'CanSwap: cellA at $a has no tile (tileTypeId: ${cellA.tileTypeId}, tileInstanceId: ${cellA.tileInstanceId})',
+      );
       return false;
     }
     if (cellB.tileTypeId == null || cellB.tileInstanceId == null) {
       DebugLogger.swap(
-          'CanSwap: cellB at $b has no tile (tileTypeId: ${cellB.tileTypeId}, tileInstanceId: ${cellB.tileInstanceId})');
+        'CanSwap: cellB at $b has no tile (tileTypeId: ${cellB.tileTypeId}, tileInstanceId: ${cellB.tileInstanceId})',
+      );
       return false;
     }
 
     // Check if either cell is blocked
     if (cellA.isBlocked) {
       DebugLogger.swap(
-          'CanSwap: cellA at $a is blocked (blocker: ${cellA.blocker})');
+        'CanSwap: cellA at $a is blocked (blocker: ${cellA.blocker})',
+      );
       return false;
     }
     if (cellB.isBlocked) {
       DebugLogger.swap(
-          'CanSwap: cellB at $b is blocked (blocker: ${cellB.blocker})');
+        'CanSwap: cellB at $b is blocked (blocker: ${cellB.blocker})',
+      );
       return false;
     }
 
@@ -275,7 +352,8 @@ class BoardController {
     final colDiff = (a.col - b.col).abs();
     if (rowDiff + colDiff != 1) {
       DebugLogger.swap(
-          'CanSwap: not adjacent: $a vs $b (rowDiff: $rowDiff, colDiff: $colDiff)');
+        'CanSwap: not adjacent: $a vs $b (rowDiff: $rowDiff, colDiff: $colDiff)',
+      );
       return false;
     }
 
@@ -436,7 +514,9 @@ class BoardController {
       await onBlockerBreak!(coord);
     } else {
       // Fallback if no VFX callback registered
-      DebugLogger.boardController('Playing scooter break animation at $coord (no VFX callback)');
+      DebugLogger.boardController(
+        'Playing scooter break animation at $coord (no VFX callback)',
+      );
       await Future.delayed(const Duration(milliseconds: 100));
     }
   }
@@ -452,7 +532,10 @@ class BoardController {
   /// Ensures all clearing paths go through the same callback mechanism
   /// isRegularClear: if true, adjacent blockers will be broken; if false, blockers are preserved
   /// Only regular tile matches should break adjacent blockers (not special VFX)
-  Future<Map<Coord, int>> _emitCellsCleared(Set<Coord> cellsToClear, {bool isRegularClear = true}) async {
+  Future<Map<Coord, int>> _emitCellsCleared(
+    Set<Coord> cellsToClear, {
+    bool isRegularClear = true,
+  }) async {
     if (cellsToClear.isEmpty) {
       return {};
     }
@@ -528,7 +611,8 @@ class BoardController {
     }
 
     DebugLogger.boardController(
-        '_emitCellsCleared: processing ${cellsToClear.length} cells');
+      '_emitCellsCleared: processing ${cellsToClear.length} cells',
+    );
 
     for (final coord in cellsToClear) {
       if (coord.row >= 0 &&
@@ -542,21 +626,25 @@ class BoardController {
           final tileTypeId = cell.tileTypeId;
           if (tileTypeId != null) {
             DebugLogger.boardController(
-                '_emitCellsCleared: coord=$coord, tileTypeId=$tileTypeId, isSpecial=${_isSpecial(tileTypeId)}');
+              '_emitCellsCleared: coord=$coord, tileTypeId=$tileTypeId, isSpecial=${_isSpecial(tileTypeId)}',
+            );
             // Only include victim tiles (not special tiles)
             // Special tiles (101-105) should not be counted as cleared for objectives
             if (!_isSpecial(tileTypeId)) {
               clearedCellsWithTypes[coord] = tileTypeId;
               hasRegularTileCleared = true;
               DebugLogger.boardController(
-                  '_emitCellsCleared: added victim tile at $coord: $tileTypeId');
+                '_emitCellsCleared: added victim tile at $coord: $tileTypeId',
+              );
             } else {
               DebugLogger.boardController(
-                  '_emitCellsCleared: filtered out special tile at $coord: $tileTypeId');
+                '_emitCellsCleared: filtered out special tile at $coord: $tileTypeId',
+              );
             }
           } else {
             DebugLogger.boardController(
-                '_emitCellsCleared: coord=$coord has null tileTypeId (already cleared?)');
+              '_emitCellsCleared: coord=$coord has null tileTypeId (already cleared?)',
+            );
           }
           // Actually clear the cell
           cell.tileTypeId = null;
@@ -574,7 +662,8 @@ class BoardController {
     }
 
     DebugLogger.boardController(
-        '_emitCellsCleared: emitting ${clearedCellsWithTypes.length} victim tiles');
+      '_emitCellsCleared: emitting ${clearedCellsWithTypes.length} victim tiles',
+    );
 
     // Always emit callback (even if empty) so listeners can react/debug
     // Empty maps can occur when special tiles clear only other special tiles
@@ -611,7 +700,8 @@ class BoardController {
 
   /// Set the generic clear callback (called from BoardGame)
   void setOnCellsClearedWithTypes(
-      Future<void> Function(Map<Coord, int>)? callback) {
+    Future<void> Function(Map<Coord, int>)? callback,
+  ) {
     _onCellsClearedWithTypes = callback;
   }
 
@@ -648,17 +738,21 @@ class BoardController {
     final futures = <Future<void>>[];
     for (int i = 0; i < blockers.length; i++) {
       final blockerCoord = blockers[i];
-      futures.add(Future(() async {
-        final delayMs = staggerMs * i;
-        if (delayMs > 0) {
-          await Future.delayed(Duration(milliseconds: delayMs));
-        }
-        await _playScooterBreakAnimation(blockerCoord);
-        final cell = gridModel.cells[blockerCoord.row][blockerCoord.col];
-        cell.blocker = BlockerType.none;
-        onBlockerCleared?.call(blockerCoord);
-        DebugLogger.boardController('Scooter blocker cleared at $blockerCoord');
-      }));
+      futures.add(
+        Future(() async {
+          final delayMs = staggerMs * i;
+          if (delayMs > 0) {
+            await Future.delayed(Duration(milliseconds: delayMs));
+          }
+          await _playScooterBreakAnimation(blockerCoord);
+          final cell = gridModel.cells[blockerCoord.row][blockerCoord.col];
+          cell.blocker = BlockerType.none;
+          onBlockerCleared?.call(blockerCoord);
+          DebugLogger.boardController(
+            'Scooter blocker cleared at $blockerCoord',
+          );
+        }),
+      );
     }
 
     await Future.wait(futures);
@@ -676,10 +770,12 @@ class BoardController {
     Coord? swapA,
     Coord? swapB,
     Coord?
-        chosenCoord, // The coord the user started dragging from (dragStartCoord)
-    Future<void> Function(Map<Coord, int>,
-            Map<Coord, ({Coord? targetCoord, Set<Coord>? activationCells})>)?
-        onSpecialActivated,
+    chosenCoord, // The coord the user started dragging from (dragStartCoord)
+    Future<void> Function(
+      Map<Coord, int>,
+      Map<Coord, ({Coord? targetCoord, Set<Coord>? activationCells})>,
+    )?
+    onSpecialActivated,
     Future<void> Function()? onSync,
   }) async {
     // Process matches to get cells to clear and special tiles to spawn
@@ -698,7 +794,8 @@ class BoardController {
 
     // Check if this is a special+special combo swap
     // Note: swap has already happened, so we read current types at swapA/swapB
-    final isSpecialCombo = swapA != null &&
+    final isSpecialCombo =
+        swapA != null &&
         swapB != null &&
         _coordHasSpecial(swapA) &&
         _coordHasSpecial(swapB);
@@ -710,7 +807,8 @@ class BoardController {
     if (isSpecialCombo) {
       // Use combo resolver for special+special swaps
       DebugLogger.specialCombo(
-          'Detected special+special swap at $swapA and $swapB, using combo resolver');
+        'Detected special+special swap at $swapA and $swapB, using combo resolver',
+      );
       final comboResult = _comboResolver.resolveCombo(
         grid: gridModel,
         a: swapA,
@@ -721,7 +819,8 @@ class BoardController {
       if (comboResult.isCombo) {
         // Process combo steps sequentially - skip normal pipeline
         DebugLogger.specialCombo(
-            'Combo detected: ${comboResult.steps.length} steps, ${comboResult.cellsToClear.length} cells to clear');
+          'Combo detected: ${comboResult.steps.length} steps, ${comboResult.cellsToClear.length} cells to clear',
+        );
         return await _runComboSteps(
           comboResult: comboResult,
           swapA: swapA,
@@ -743,11 +842,13 @@ class BoardController {
         vfxMetadata = expanded.vfxMetadata;
 
         // CRITICAL FIX: Remove spawn locations from cellsToClear to prevent newly spawned specials from being cleared
-        final removedSpawns =
-            cellsToClear.intersection(specialTileSpawns.keys.toSet());
+        final removedSpawns = cellsToClear.intersection(
+          specialTileSpawns.keys.toSet(),
+        );
         if (removedSpawns.isNotEmpty) {
           DebugLogger.boardController(
-              'Preventing ${removedSpawns.length} spawn location(s) from being cleared: $removedSpawns');
+            'Preventing ${removedSpawns.length} spawn location(s) from being cleared: $removedSpawns',
+          );
         }
         cellsToClear.removeAll(specialTileSpawns.keys);
       }
@@ -768,11 +869,13 @@ class BoardController {
 
       // CRITICAL FIX: Remove spawn locations from cellsToClear to prevent newly spawned specials from being cleared
       // This can happen when sticky rice bomb (103) activates and its activation cells include a spawn location
-      final removedSpawns =
-          cellsToClear.intersection(specialTileSpawns.keys.toSet());
+      final removedSpawns = cellsToClear.intersection(
+        specialTileSpawns.keys.toSet(),
+      );
       if (removedSpawns.isNotEmpty) {
         DebugLogger.boardController(
-            'Preventing ${removedSpawns.length} spawn location(s) from being cleared: $removedSpawns');
+          'Preventing ${removedSpawns.length} spawn location(s) from being cleared: $removedSpawns',
+        );
       }
       cellsToClear.removeAll(specialTileSpawns.keys);
     }
@@ -787,7 +890,8 @@ class BoardController {
         if (metadata != null && metadata.targetCoord != null) {
           dragonFlyTargetCoord = metadata.targetCoord;
           DebugLogger.boardController(
-              'DragonFly detected: excluding targetCoord $dragonFlyTargetCoord from all clearing logic');
+            'DragonFly detected: excluding targetCoord $dragonFlyTargetCoord from all clearing logic',
+          );
           break;
         }
       }
@@ -808,13 +912,15 @@ class BoardController {
         // Note: spawn location should always have a tileInstanceId (it's from a matched cell)
         if (cell.tileInstanceId == null) {
           DebugLogger.warn(
-              'spawn location $coord has no tileInstanceId, assigning new one',
-              category: 'SpecialTile');
+            'spawn location $coord has no tileInstanceId, assigning new one',
+            category: 'SpecialTile',
+          );
           cell.tileInstanceId = getNextInstanceId();
         }
         cell.tileTypeId = specialTypeId;
         DebugLogger.specialTile(
-            'Spawned special tile type $specialTypeId at $coord (instanceId: ${cell.tileInstanceId})');
+          'Spawned special tile type $specialTypeId at $coord (instanceId: ${cell.tileInstanceId})',
+        );
       }
     }
 
@@ -825,8 +931,11 @@ class BoardController {
         <Coord>{}; // All cells that should be cleared by Party Poppers
     final partyPoppersToClear =
         <Coord, int>{}; // coord -> tileTypeId (just the Party Popper coords)
-    final partyPopperAllowedCells = <Coord,
-        Set<Coord>>{}; // coord -> allowedCells (computed once per popper)
+    final partyPopperAllowedCells =
+        <
+          Coord,
+          Set<Coord>
+        >{}; // coord -> allowedCells (computed once per popper)
     final firecrackerCells =
         <Coord>{}; // All cells that should be cleared by Firecrackers
     final firecrackersToClear =
@@ -886,8 +995,9 @@ class BoardController {
     // Separate cells: VFX-controlled cells vs other cells
     // Also track which cells came from special activations (103 Sticky Rice, 105 DragonFly)
     final otherCellsToClear = <Coord>{};
-    final specialActivationCells = <Coord>{}; // Cells cleared by special activations (not VFX)
-    
+    final specialActivationCells =
+        <Coord>{}; // Cells cleared by special activations (not VFX)
+
     // Get all cells that will be cleared by activated special types 103 and 105
     final cellsClearedBySpecials = <Coord>{};
     for (final entry in activatedSpecials.entries) {
@@ -902,7 +1012,7 @@ class BoardController {
         cellsClearedBySpecials.add(specialCoord);
       }
     }
-    
+
     for (final coord in cellsToClear) {
       // Skip spawn coords - newly spawned specials should not be cleared immediately
       if (spawnCoords.contains(coord)) continue;
@@ -960,8 +1070,10 @@ class BoardController {
           allMetadataOrdered[entry.key] = meta;
         } else if (entry.value == 101 || entry.value == 102) {
           // Party poppers don't need targetCoord, but add empty metadata for consistency
-          allMetadataOrdered[entry.key] =
-              (targetCoord: null, activationCells: null);
+          allMetadataOrdered[entry.key] = (
+            targetCoord: null,
+            activationCells: null,
+          );
         }
       }
 
@@ -976,7 +1088,8 @@ class BoardController {
       // This ensures tiles disappear exactly when projectile touches them.
       // No sequential clear runner needed - VFX handles all clearing timing.
       DebugLogger.boardController(
-          'Party Popper clearing handled by VFX (${partyPoppersToClear.length} poppers)');
+        'Party Popper clearing handled by VFX (${partyPoppersToClear.length} poppers)',
+      );
     }
 
     if (firecrackersToClear.isNotEmpty) {
@@ -984,7 +1097,8 @@ class BoardController {
       // VFX calls game.clearTilesAtCoords() at the moment particles burst (60% through explosion),
       // ensuring tiles disappear synchronized with visual impact.
       DebugLogger.boardController(
-          'Firecracker clearing handled by VFX (${firecrackersToClear.length} firecrackers)');
+        'Firecracker clearing handled by VFX (${firecrackersToClear.length} firecrackers)',
+      );
     }
 
     // Clear other cells (non-Party Popper) normally, EXCEPT DragonFly targetCoord
@@ -1006,7 +1120,10 @@ class BoardController {
         .where((coord) => coord != dragonFlyTargetCoord)
         .toSet();
     if (specialActivationCellsFiltered.isNotEmpty) {
-      await _emitCellsCleared(specialActivationCellsFiltered, isRegularClear: false);
+      await _emitCellsCleared(
+        specialActivationCellsFiltered,
+        isRegularClear: false,
+      );
     }
 
     // Trigger special activation callback if provided
@@ -1017,7 +1134,8 @@ class BoardController {
     // After VFX completes, clear DragonFly targetCoord if it exists
     if (dragonFlyTargetCoord != null) {
       DebugLogger.boardController(
-          'DragonFly targetCoord $dragonFlyTargetCoord cleared after VFX');
+        'DragonFly targetCoord $dragonFlyTargetCoord cleared after VFX',
+      );
       await _emitCellsCleared({dragonFlyTargetCoord});
     }
 
@@ -1029,17 +1147,16 @@ class BoardController {
   /// Handles special tile activations and chain reactions
   /// Returns: (clearedCells, activatedSpecials)
   // ignore: unused_element
-  Future<
-      ({
-        Set<Coord> clearedCells,
-        Map<Coord, int> activatedSpecials,
-      })> _applyClearSetWithChain({
+  Future<({Set<Coord> clearedCells, Map<Coord, int> activatedSpecials})>
+  _applyClearSetWithChain({
     required Set<Coord> initialToClear,
     required Future<void> Function() onSync,
     Future<void> Function(Set<Coord>)? onCellsCleared,
-    Future<void> Function(Map<Coord, int>,
-            Map<Coord, ({Coord? targetCoord, Set<Coord>? activationCells})>)?
-        onSpecialActivated,
+    Future<void> Function(
+      Map<Coord, int>,
+      Map<Coord, ({Coord? targetCoord, Set<Coord>? activationCells})>,
+    )?
+    onSpecialActivated,
     Coord? swapA,
     Coord? swapB,
   }) async {
@@ -1064,7 +1181,8 @@ class BoardController {
         if (metadata != null && metadata.targetCoord != null) {
           dragonFlyTargetCoord = metadata.targetCoord;
           DebugLogger.boardController(
-              'DragonFly detected: excluding targetCoord $dragonFlyTargetCoord from initial clear');
+            'DragonFly detected: excluding targetCoord $dragonFlyTargetCoord from initial clear',
+          );
           break;
         }
       }
@@ -1072,8 +1190,9 @@ class BoardController {
 
     // Clear all cells in the expanded clearing set, EXCEPT DragonFly targetCoord
     // Guard: only clear if coord in bounds AND bedId != -1 (not void)
-    final cellsToClearFiltered =
-        cellsToClear.where((coord) => coord != dragonFlyTargetCoord).toSet();
+    final cellsToClearFiltered = cellsToClear
+        .where((coord) => coord != dragonFlyTargetCoord)
+        .toSet();
     final clearedCellsWithTypes = await _emitCellsCleared(cellsToClearFiltered);
 
     // Track which cells were actually cleared (from what _emitCellsCleared returned)
@@ -1094,27 +1213,17 @@ class BoardController {
     // So we don't need to clear it here anymore
 
     await onSync(); // Sync to show tiles disappear
-    await Future.wait([
-      _playPendingBlockerBreaks(),
-      Future.delayed(const Duration(milliseconds: 180)),
-    ]); // Delay for clear animation
+    await _playPendingBlockerBreaks();
 
     // Apply gravity
     applyGravity();
     await onSync(); // Sync to show tiles fall
-    await Future.delayed(
-        const Duration(milliseconds: 300)); // Delay for fall animation
 
     // Refill
     refill();
     await onSync(); // Sync to show new tiles spawn
-    await Future.delayed(
-        const Duration(milliseconds: 150)); // Delay for spawn animation
 
-    return (
-      clearedCells: clearedCells,
-      activatedSpecials: activatedSpecials,
-    );
+    return (clearedCells: clearedCells, activatedSpecials: activatedSpecials);
   }
 
   /// Apply gravity: drop tiles down into empty playable cells
@@ -1188,8 +1297,10 @@ class BoardController {
             cell.tileTypeId = tileDef.id;
             cell.tileInstanceId = getNextInstanceId();
           } else {
-            DebugLogger.warn('No spawnable tile available for refill',
-                category: 'Refill');
+            DebugLogger.warn(
+              'No spawnable tile available for refill',
+              category: 'Refill',
+            );
           }
         }
       }
@@ -1219,13 +1330,7 @@ class BoardController {
     required Future<void> Function() onSync,
     Future<void> Function()? onNoMovesDetected,
   }) async {
-    // Never shuffle if special tiles exist
-    if (hasAnySpecialTile()) {
-      DebugLogger.boardController('Shuffle skipped (special tile present)');
-      return;
-    }
-
-    // Check if moves exist
+    // A special tile only prevents a shuffle when it participates in a legal move.
     if (hasPossibleMove()) {
       return; // Board is solvable
     }
@@ -1243,7 +1348,10 @@ class BoardController {
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
         final cell = gridModel.cells[row][col];
-        if (cell.bedId != null && cell.bedId != -1 && cell.tileTypeId != null && !cell.isBlocked) {
+        if (cell.bedId != null &&
+            cell.bedId != -1 &&
+            cell.tileTypeId != null &&
+            !cell.isBlocked) {
           playableCells.add(Coord(row, col));
         }
       }
@@ -1285,7 +1393,8 @@ class BoardController {
 
       if (isValid) {
         DebugLogger.boardController(
-            'Shuffle successful after $attempt attempt(s)');
+          'Shuffle successful after $attempt attempt(s)',
+        );
         shuffleSuccess = true;
         break;
       }
@@ -1294,8 +1403,9 @@ class BoardController {
     // Fallback: reroll all tiles if shuffle failed
     if (!shuffleSuccess) {
       DebugLogger.warn(
-          'Shuffle failed after $maxShuffleAttempts attempts, using reroll fallback',
-          category: 'Shuffle');
+        'Shuffle failed after $maxShuffleAttempts attempts, using reroll fallback',
+        category: 'Shuffle',
+      );
 
       // Reroll until no matches (if needed)
       if (!stageData.allowInitialMatches) {
@@ -1343,6 +1453,15 @@ class BoardController {
       }
 
       DebugLogger.boardController('Reroll fallback complete');
+    }
+
+    if ((!stageData.allowInitialMatches && detectMatches().hasMatches) ||
+        !hasPossibleMove()) {
+      if (!_installPlayablePattern()) {
+        throw StateError(
+          'Stage ${stageData.stageKey} could not be reshuffled into a playable board',
+        );
+      }
     }
 
     // Sync UI once after shuffle/reroll
@@ -1456,7 +1575,10 @@ class BoardController {
   /// Check if swap would create a 2x2 block around the swap
   /// simTypeGetter: function that returns tileTypeId at a coord (simulating swap state)
   bool _wouldMake2x2AroundSwap(
-      Coord a, Coord b, int? Function(Coord) simTypeGetter) {
+    Coord a,
+    Coord b,
+    int? Function(Coord) simTypeGetter,
+  ) {
     // Get all 2x2 blocks that overlap with either swapped position
     final blocksToCheck = <Set<Coord>>[];
 
@@ -1553,13 +1675,15 @@ class BoardController {
     Coord a,
     Coord b, {
     Coord?
-        chosenCoord, // The coord the user started dragging from (dragStartCoord)
+    chosenCoord, // The coord the user started dragging from (dragStartCoord)
     required Future<void> Function() onSync,
     Future<void> Function(MatchResult)? onMatchCleared,
     Future<void> Function(Set<Coord>)? onCellsCleared,
-    Future<void> Function(Map<Coord, int>,
-            Map<Coord, ({Coord? targetCoord, Set<Coord>? activationCells})>)?
-        onSpecialActivated,
+    Future<void> Function(
+      Map<Coord, int>,
+      Map<Coord, ({Coord? targetCoord, Set<Coord>? activationCells})>,
+    )?
+    onSpecialActivated,
     Future<void> Function()? onNoMovesDetected,
   }) async {
     if (!canSwap(a, b)) {
@@ -1582,8 +1706,6 @@ class BoardController {
 
     // Show swap animation
     await onSync(); // Sync to show swap animation (awaited to ensure moves complete)
-    await Future.delayed(
-        const Duration(milliseconds: 150)); // Delay for swap animation
 
     // Check for matches after swap
     final matchResult = detectMatches();
@@ -1597,20 +1719,20 @@ class BoardController {
     // If no matches AND no 2x2 block AND no special tile, swap back to original state
     if (!matchResult.hasMatches && blockCellsSet == null && !hasSpecialTile) {
       DebugLogger.swap(
-          'Invalid swap: no matches, no 2x2 block, and no special tile found, swapping back');
+        'Invalid swap: no matches, no 2x2 block, and no special tile found, swapping back',
+      );
 
       swapCells(a, b); // Swap back to restore original positions
 
       await onSync(); // Sync to show swap-back animation (awaited to ensure moves complete)
-      await Future.delayed(
-          const Duration(milliseconds: 150)); // Delay for swap-back animation
       return false; // Swap was invalid, no cascades triggered
     }
 
     // Special tile swap: if special tile found but no matches/2x2, run special-only clear
     if (hasSpecialTile && !matchResult.hasMatches && blockCellsSet == null) {
       DebugLogger.swap(
-          'Valid swap: special tile found (no matches, no 2x2 block)');
+        'Valid swap: special tile found (no matches, no 2x2 block)',
+      );
 
       // Run special-only clear with empty MatchResult
       final emptyMatchResult = MatchResult(matches: []);
@@ -1624,22 +1746,15 @@ class BoardController {
       );
 
       await onSync(); // Sync to show tiles disappear
-      await Future.wait([
-        _playPendingBlockerBreaks(),
-        Future.delayed(const Duration(milliseconds: 180)),
-      ]); // Delay for clear animation
+      await _playPendingBlockerBreaks();
 
       // Apply gravity
       applyGravity();
       await onSync(); // Sync to show tiles fall
-      await Future.delayed(
-          const Duration(milliseconds: 300)); // Delay for fall animation
 
       // Refill
       refill();
       await onSync(); // Sync to show new tiles spawn
-      await Future.delayed(
-          const Duration(milliseconds: 150)); // Delay for spawn animation
 
       // Check for solvability after refill (shuffle if no possible moves and no special tiles)
       await ensureSolvableOrShuffle(
@@ -1676,8 +1791,10 @@ class BoardController {
           gridModel.cells[firstBlockCell.row][firstBlockCell.col].tileTypeId!;
 
       // Create a fake match for the 2x2 block so particle callback gets the correct data
-      final blockMatch =
-          Match(cells: blockCells.toList(), tileTypeId: blockTileTypeId);
+      final blockMatch = Match(
+        cells: blockCells.toList(),
+        tileTypeId: blockTileTypeId,
+      );
       final blockMatchResult = MatchResult(matches: [blockMatch]);
 
       // Arm match SFX from the 2x2 block match (will play on clear)
@@ -1699,22 +1816,15 @@ class BoardController {
       }
 
       await onSync(); // Sync to show tiles disappear
-      await Future.wait([
-        _playPendingBlockerBreaks(),
-        Future.delayed(const Duration(milliseconds: 180)),
-      ]); // Delay for clear animation
+      await _playPendingBlockerBreaks();
 
       // Apply gravity
       applyGravity();
       await onSync(); // Sync to show tiles fall
-      await Future.delayed(
-          const Duration(milliseconds: 300)); // Delay for fall animation
 
       // Refill
       refill();
       await onSync(); // Sync to show new tiles spawn
-      await Future.delayed(
-          const Duration(milliseconds: 150)); // Delay for spawn animation
 
       // Continue with normal cascade loop for further line matches that may have formed
       await runCascade(
@@ -1760,15 +1870,17 @@ class BoardController {
   Future<bool> runCascade({
     required Future<void> Function() onSync,
     Future<void> Function(MatchResult)? onMatchCleared,
-    Future<void> Function(Map<Coord, int>,
-            Map<Coord, ({Coord? targetCoord, Set<Coord>? activationCells})>)?
-        onSpecialActivated,
+    Future<void> Function(
+      Map<Coord, int>,
+      Map<Coord, ({Coord? targetCoord, Set<Coord>? activationCells})>,
+    )?
+    onSpecialActivated,
     Future<void> Function()? onNoMovesDetected,
     int maxCascades = 10,
     Coord? swapA,
     Coord? swapB,
     Coord?
-        chosenCoord, // The coord the user started dragging from (dragStartCoord)
+    chosenCoord, // The coord the user started dragging from (dragStartCoord)
   }) async {
     int cascadeCount = 0;
 
@@ -1781,7 +1893,8 @@ class BoardController {
       // If no line matches but 2x2 blocks found, handle them
       if (!matchResult.hasMatches && all2x2Blocks.isNotEmpty) {
         DebugLogger.cascade(
-            'Cascade #${cascadeCount + 1}: ${all2x2Blocks.length} 2x2 block(s) found');
+          'Cascade #${cascadeCount + 1}: ${all2x2Blocks.length} 2x2 block(s) found',
+        );
         cascadeCount++;
 
         // Process each 2x2 block
@@ -1789,11 +1902,14 @@ class BoardController {
           // Get tileTypeId from first cell in block (all should have same type)
           final firstBlockCell = blockCells.first;
           final blockTileTypeId = gridModel
-              .cells[firstBlockCell.row][firstBlockCell.col].tileTypeId!;
+              .cells[firstBlockCell.row][firstBlockCell.col]
+              .tileTypeId!;
 
           // Create a fake match for the 2x2 block
-          final blockMatch =
-              Match(cells: blockCells.toList(), tileTypeId: blockTileTypeId);
+          final blockMatch = Match(
+            cells: blockCells.toList(),
+            tileTypeId: blockTileTypeId,
+          );
           final blockMatchResult = MatchResult(matches: [blockMatch]);
 
           // Arm match SFX from the 2x2 block match (will play on clear)
@@ -1815,23 +1931,16 @@ class BoardController {
           }
 
           await onSync(); // Sync to show tiles disappear
-          await Future.wait([
-            _playPendingBlockerBreaks(),
-            Future.delayed(const Duration(milliseconds: 180)),
-          ]); // Delay for clear animation
+          await _playPendingBlockerBreaks();
         }
 
         // Apply gravity after clearing 2x2 blocks
         applyGravity();
         await onSync(); // Sync to show tiles fall
-        await Future.delayed(
-            const Duration(milliseconds: 300)); // Delay for fall animation
 
         // Refill
         refill();
         await onSync(); // Sync to show new tiles spawn
-        await Future.delayed(
-            const Duration(milliseconds: 150)); // Delay for spawn animation
 
         // Check for solvability after refill (shuffle if no possible moves and no special tiles)
         await ensureSolvableOrShuffle(
@@ -1853,7 +1962,8 @@ class BoardController {
 
       cascadeCount++;
       DebugLogger.cascade(
-          'Cascade #$cascadeCount: ${matchResult.matches.length} matches, ${matchResult.allMatchedCells.length} cells');
+        'Cascade #$cascadeCount: ${matchResult.matches.length} matches, ${matchResult.allMatchedCells.length} cells',
+      );
 
       // Arm match SFX (will play when tiles actually clear)
       _armMatchSfx();
@@ -1882,22 +1992,15 @@ class BoardController {
       }
 
       await onSync(); // Sync to show tiles disappear (awaited to ensure removals complete)
-      await Future.wait([
-        _playPendingBlockerBreaks(),
-        Future.delayed(const Duration(milliseconds: 180)),
-      ]); // Delay for clear animation
+      await _playPendingBlockerBreaks();
 
       // Apply gravity
       applyGravity();
       await onSync(); // Sync to show tiles fall (awaited to ensure moves complete)
-      await Future.delayed(const Duration(
-          milliseconds: 300)); // Delay for fall animation (increased from 200)
 
       // Refill
       refill();
       await onSync(); // Sync to show new tiles spawn (awaited to ensure spawns complete)
-      await Future.delayed(
-          const Duration(milliseconds: 150)); // Delay for spawn animation
 
       // Check for solvability after refill (shuffle if no possible moves and no special tiles)
       await ensureSolvableOrShuffle(
@@ -1907,8 +2010,10 @@ class BoardController {
     }
 
     if (cascadeCount >= maxCascades) {
-      DebugLogger.warn('Reached max cascade limit ($maxCascades)',
-          category: 'Cascade');
+      DebugLogger.warn(
+        'Reached max cascade limit ($maxCascades)',
+        category: 'Cascade',
+      );
     }
 
     return true;
@@ -1920,9 +2025,11 @@ class BoardController {
     required SpecialComboResult comboResult,
     Coord? swapA,
     Coord? swapB,
-    Future<void> Function(Map<Coord, int>,
-            Map<Coord, ({Coord? targetCoord, Set<Coord>? activationCells})>)?
-        onSpecialActivated,
+    Future<void> Function(
+      Map<Coord, int>,
+      Map<Coord, ({Coord? targetCoord, Set<Coord>? activationCells})>,
+    )?
+    onSpecialActivated,
     Future<void> Function()? onSync,
   }) async {
     final activatedSpecials = <Coord, int>{};
@@ -1938,7 +2045,8 @@ class BoardController {
       step1CenterFor104Combo = activatedCoord;
       step2CenterFor104Combo = (activatedCoord == swapA) ? swapB : swapA;
       DebugLogger.specialCombo(
-          '104+104 combo detected: Step 1 center=$step1CenterFor104Combo, Step 2 center=$step2CenterFor104Combo');
+        '104+104 combo detected: Step 1 center=$step1CenterFor104Combo, Step 2 center=$step2CenterFor104Combo',
+      );
     }
 
     // Iterate through combo steps in order with index
@@ -1988,7 +2096,8 @@ class BoardController {
             targetCoord = null;
             activationCells = step.cells;
             DebugLogger.specialCombo(
-                'bomb3x3 step: center=${step.center}, cells=${step.cells.length}, vfxCoord=$vfxCoord');
+              'bomb3x3 step: center=${step.center}, cells=${step.cells.length}, vfxCoord=$vfxCoord',
+            );
             break;
 
           case ComboStepType.colorAllOfType:
@@ -2018,32 +2127,38 @@ class BoardController {
                   // Trigger VFX with both coords
                   activatedSpecials[coordA] = 103;
                   activatedSpecials[coordB] = 103;
-                  final stepMetadata = <Coord,
-                      ({Coord? targetCoord, Set<Coord>? activationCells})>{
-                    coordA: (
-                      targetCoord: null,
-                      activationCells: step.cells,
-                    ),
-                    coordB: (
-                      targetCoord: null,
-                      activationCells: step.cells,
-                    ),
-                  };
+                  final stepMetadata =
+                      <
+                        Coord,
+                        ({Coord? targetCoord, Set<Coord>? activationCells})
+                      >{
+                        coordA: (
+                          targetCoord: null,
+                          activationCells: step.cells,
+                        ),
+                        coordB: (
+                          targetCoord: null,
+                          activationCells: step.cells,
+                        ),
+                      };
                   await onSpecialActivated(activatedSpecials, stepMetadata);
                   DebugLogger.specialCombo(
-                      '103+103 combo: triggered duo VFX for both coords $coordA and $coordB');
+                    '103+103 combo: triggered duo VFX for both coords $coordA and $coordB',
+                  );
                   duoVfxTriggered = true;
                   // Set vfxCoord to null to skip normal single-tile VFX path
                   vfxCoord = null;
                 } else {
                   DebugLogger.warn(
-                      '103+103 combo: missing tileInstanceId at $coordA or $coordB',
-                      category: 'SpecialCombo');
+                    '103+103 combo: missing tileInstanceId at $coordA or $coordB',
+                    category: 'SpecialCombo',
+                  );
                 }
               } else {
                 DebugLogger.warn(
-                    '103+103 combo: coords $coordA or $coordB don\'t have type 103',
-                    category: 'SpecialCombo');
+                  '103+103 combo: coords $coordA or $coordB don\'t have type 103',
+                  category: 'SpecialCombo',
+                );
               }
             }
 
@@ -2059,7 +2174,8 @@ class BoardController {
               } else {
                 vfxCoord = null;
                 DebugLogger.specialCombo(
-                    'Skipping VFX for 103 step: no valid coord found (step.center=${step.center}, swapA=$swapA, swapB=$swapB)');
+                  'Skipping VFX for 103 step: no valid coord found (step.center=${step.center}, swapA=$swapA, swapB=$swapB)',
+                );
               }
             }
             targetCoord = null;
@@ -2079,50 +2195,59 @@ class BoardController {
           validVfxCoord = vfxCoord;
           if (validVfxCoord != null) {
             DebugLogger.specialCombo(
-                'Bypassing guards for combo step: using vfxCoord=$validVfxCoord (type=$specialTypeId, step type=${step.type})');
+              'Bypassing guards for combo step: using vfxCoord=$validVfxCoord (type=$specialTypeId, step type=${step.type})',
+            );
           } else {
             DebugLogger.warn(
-                'vfxCoord is null for combo step ${step.type}, skipping VFX',
-                category: 'SpecialCombo');
+              'vfxCoord is null for combo step ${step.type}, skipping VFX',
+              category: 'SpecialCombo',
+            );
           }
         } else {
           // Guard: Verify tile exists and matches expected type before triggering VFX
           // If vfxCoord doesn't have the expected tile, try the other swapped coord
           if (vfxCoord != null) {
             DebugLogger.specialCombo(
-                'Checking VFX coord: $vfxCoord for type $specialTypeId (step type: ${step.type})');
+              'Checking VFX coord: $vfxCoord for type $specialTypeId (step type: ${step.type})',
+            );
             // Check if tile at vfxCoord exists and matches expected type
             if (_coordHasSpecialType(vfxCoord, specialTypeId)) {
               validVfxCoord = vfxCoord;
               DebugLogger.specialCombo(
-                  'VFX coord $vfxCoord validated: has type $specialTypeId');
+                'VFX coord $vfxCoord validated: has type $specialTypeId',
+              );
             } else if (swapA != null && swapB != null) {
               // Try the other swapped coord (one of them should be the real special)
               final otherCoord = (vfxCoord == swapA) ? swapB : swapA;
               DebugLogger.specialCombo(
-                  'Tile at $vfxCoord doesn\'t match type $specialTypeId, trying other swap coord $otherCoord');
+                'Tile at $vfxCoord doesn\'t match type $specialTypeId, trying other swap coord $otherCoord',
+              );
               if (_coordHasSpecialType(otherCoord, specialTypeId)) {
                 validVfxCoord = otherCoord;
                 DebugLogger.specialCombo(
-                    'Using other swap coord $otherCoord instead (has type $specialTypeId)');
+                  'Using other swap coord $otherCoord instead (has type $specialTypeId)',
+                );
               } else {
                 final cellAtVfx = gridModel.cells[vfxCoord.row][vfxCoord.col];
                 final cellAtOther =
                     gridModel.cells[otherCoord.row][otherCoord.col];
                 DebugLogger.warn(
-                    'Neither swap coord has expected type: vfxCoord=$vfxCoord (type=${cellAtVfx.tileTypeId}, instanceId=${cellAtVfx.tileInstanceId}), otherCoord=$otherCoord (type=${cellAtOther.tileTypeId}, instanceId=${cellAtOther.tileInstanceId})',
-                    category: 'SpecialCombo');
+                  'Neither swap coord has expected type: vfxCoord=$vfxCoord (type=${cellAtVfx.tileTypeId}, instanceId=${cellAtVfx.tileInstanceId}), otherCoord=$otherCoord (type=${cellAtOther.tileTypeId}, instanceId=${cellAtOther.tileInstanceId})',
+                  category: 'SpecialCombo',
+                );
               }
             } else {
               final cellAtVfx = gridModel.cells[vfxCoord.row][vfxCoord.col];
               DebugLogger.warn(
-                  'Tile at $vfxCoord doesn\'t match type $specialTypeId (actual type=${cellAtVfx.tileTypeId}, instanceId=${cellAtVfx.tileInstanceId}) and no swap coords available',
-                  category: 'SpecialCombo');
+                'Tile at $vfxCoord doesn\'t match type $specialTypeId (actual type=${cellAtVfx.tileTypeId}, instanceId=${cellAtVfx.tileInstanceId}) and no swap coords available',
+                category: 'SpecialCombo',
+              );
             }
           } else {
             DebugLogger.warn(
-                'vfxCoord is null for step type ${step.type}, skipping VFX',
-                category: 'SpecialCombo');
+              'vfxCoord is null for step type ${step.type}, skipping VFX',
+              category: 'SpecialCombo',
+            );
           }
 
           // Verify tileInstanceId exists at validVfxCoord (required for VFX)
@@ -2130,12 +2255,14 @@ class BoardController {
             final cell = gridModel.cells[validVfxCoord.row][validVfxCoord.col];
             if (cell.tileInstanceId == null) {
               DebugLogger.warn(
-                  'Tile at $validVfxCoord has no tileInstanceId, skipping VFX for step ${step.type}',
-                  category: 'SpecialCombo');
+                'Tile at $validVfxCoord has no tileInstanceId, skipping VFX for step ${step.type}',
+                category: 'SpecialCombo',
+              );
               validVfxCoord = null;
             } else {
               DebugLogger.specialCombo(
-                  'Valid VFX coord: $validVfxCoord, type=$specialTypeId, instanceId=${cell.tileInstanceId}');
+                'Valid VFX coord: $validVfxCoord, type=$specialTypeId, instanceId=${cell.tileInstanceId}',
+              );
             }
           }
         }
@@ -2145,22 +2272,25 @@ class BoardController {
           activatedSpecials[validVfxCoord] = specialTypeId;
           final stepMetadata =
               <Coord, ({Coord? targetCoord, Set<Coord>? activationCells})>{
-            validVfxCoord: (
-              targetCoord: targetCoord,
-              activationCells: activationCells,
-            ),
-          };
-          await onSpecialActivated(
-              {validVfxCoord: specialTypeId}, stepMetadata);
+                validVfxCoord: (
+                  targetCoord: targetCoord,
+                  activationCells: activationCells,
+                ),
+              };
+          await onSpecialActivated({
+            validVfxCoord: specialTypeId,
+          }, stepMetadata);
           DebugLogger.specialCombo(
-              'Triggered VFX for combo step: coord=$validVfxCoord, type=$specialTypeId');
+            'Triggered VFX for combo step: coord=$validVfxCoord, type=$specialTypeId',
+          );
         }
       }
 
       // Clear cells for this step
       // IMPORTANT: For 104+104 combo, do NOT clear either bomb center until cleanup step
       // Both bomb tiles must remain visible until BOTH VFX have finished
-      final is104ComboBombStep = comboResult.meta['combo'] == '104+104' &&
+      final is104ComboBombStep =
+          comboResult.meta['combo'] == '104+104' &&
           step.type == ComboStepType.bomb3x3;
 
       // Filter out bomb centers for 104+104 combo
@@ -2171,7 +2301,8 @@ class BoardController {
               (step2CenterFor104Combo != null &&
                   coord == step2CenterFor104Combo)) {
             DebugLogger.specialCombo(
-                'Skipping clearing of bomb center $coord in 104+104 combo (will clear in cleanup step)');
+              'Skipping clearing of bomb center $coord in 104+104 combo (will clear in cleanup step)',
+            );
             return false; // Skip clearing this coord - preserve for VFX
           }
         }
@@ -2185,12 +2316,14 @@ class BoardController {
       if (onSync != null) {
         await onSync();
         await Future.delayed(
-            const Duration(milliseconds: 90)); // 60-120ms range, using 90ms
+          const Duration(milliseconds: 90),
+        ); // 60-120ms range, using 90ms
       }
     }
 
     DebugLogger.specialCombo(
-        'Combo steps completed: ${comboResult.steps.length} steps processed');
+      'Combo steps completed: ${comboResult.steps.length} steps processed',
+    );
     return activatedSpecials;
   }
 
@@ -2203,8 +2336,10 @@ class BoardController {
         coord.row >= rows ||
         coord.col < 0 ||
         coord.col >= cols) {
-      DebugLogger.warn('placeSpecialAt: coord $coord is out of bounds',
-          category: 'BoardController');
+      DebugLogger.warn(
+        'placeSpecialAt: coord $coord is out of bounds',
+        category: 'BoardController',
+      );
       return false;
     }
 
@@ -2213,40 +2348,45 @@ class BoardController {
     // Validate: must be playable (bedId != -1)
     if (cell.bedId == null || cell.bedId == -1) {
       DebugLogger.warn(
-          'placeSpecialAt: coord $coord is not playable (bedId=${cell.bedId})',
-          category: 'BoardController');
+        'placeSpecialAt: coord $coord is not playable (bedId=${cell.bedId})',
+        category: 'BoardController',
+      );
       return false;
     }
 
     // Validate: must have an existing tile (tileTypeId != null)
     if (cell.tileTypeId == null) {
       DebugLogger.warn(
-          'placeSpecialAt: coord $coord has no tile (tileTypeId is null)',
-          category: 'BoardController');
+        'placeSpecialAt: coord $coord has no tile (tileTypeId is null)',
+        category: 'BoardController',
+      );
       return false;
     }
 
     // Validate: can only replace regular tiles (tileTypeId < 101)
     if (cell.tileTypeId! >= 101) {
       DebugLogger.warn(
-          'placeSpecialAt: coord $coord already has special tile (typeId=${cell.tileTypeId})',
-          category: 'BoardController');
+        'placeSpecialAt: coord $coord already has special tile (typeId=${cell.tileTypeId})',
+        category: 'BoardController',
+      );
       return false;
     }
 
     // Validate: powerTypeId must be a special tile (101-105)
     if (powerTypeId < 101 || powerTypeId > 105) {
       DebugLogger.warn(
-          'placeSpecialAt: invalid powerTypeId $powerTypeId (must be 101-105)',
-          category: 'BoardController');
+        'placeSpecialAt: invalid powerTypeId $powerTypeId (must be 101-105)',
+        category: 'BoardController',
+      );
       return false;
     }
 
     // Ensure tileInstanceId exists (should always exist for playable cells with tiles)
     if (cell.tileInstanceId == null) {
       DebugLogger.warn(
-          'placeSpecialAt: coord $coord has no tileInstanceId, assigning new one',
-          category: 'BoardController');
+        'placeSpecialAt: coord $coord has no tileInstanceId, assigning new one',
+        category: 'BoardController',
+      );
       cell.tileInstanceId = getNextInstanceId();
     }
 
@@ -2255,8 +2395,9 @@ class BoardController {
     cell.tileTypeId = powerTypeId;
 
     DebugLogger.log(
-        'placeSpecialAt: replaced tile at $coord from typeId=$oldTypeId to typeId=$powerTypeId (instanceId=${cell.tileInstanceId})',
-        category: 'BoardController');
+      'placeSpecialAt: replaced tile at $coord from typeId=$oldTypeId to typeId=$powerTypeId (instanceId=${cell.tileInstanceId})',
+      category: 'BoardController',
+    );
     return true;
   }
 }

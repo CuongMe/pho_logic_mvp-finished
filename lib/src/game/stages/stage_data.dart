@@ -21,13 +21,14 @@ class TileDef {
   final String file;
   final int weight;
   final String?
-      sfxType; // Sound effect identifier (e.g., 'banhMiCrunch', 'phoBowl')
+  sfxType; // Sound effect identifier (e.g., 'banhMiCrunch', 'phoBowl')
 
-  TileDef(
-      {required this.id,
-      required this.file,
-      required this.weight,
-      this.sfxType});
+  TileDef({
+    required this.id,
+    required this.file,
+    required this.weight,
+    this.sfxType,
+  });
 
   factory TileDef.fromJson(Map<String, dynamic> j) {
     return TileDef(
@@ -45,11 +46,12 @@ class BedType {
   final bool destructible;
   final int hp;
 
-  BedType(
-      {required this.id,
-      required this.file,
-      required this.destructible,
-      required this.hp});
+  BedType({
+    required this.id,
+    required this.file,
+    required this.destructible,
+    required this.hp,
+  });
 
   factory BedType.fromJson(Map<String, dynamic> j) {
     return BedType(
@@ -67,11 +69,12 @@ class BlockerDef {
   final String file;
   final String? clearedBy;
 
-  BlockerDef(
-      {required this.id,
-      required this.name,
-      required this.file,
-      this.clearedBy});
+  BlockerDef({
+    required this.id,
+    required this.name,
+    required this.file,
+    this.clearedBy,
+  });
 
   factory BlockerDef.fromJson(Map<String, dynamic> j) {
     return BlockerDef(
@@ -92,10 +95,8 @@ class StageData {
   final List<TileDef> tiles;
   final List<BedType> bedTypes;
   final List<BlockerDef> blockerTypes;
-  final List<List<int>>
-      tileMap; // values: 0 = weighted random spawn, -1 = no tile (void/empty), -2 = blocker, >=1 = fixed tile id
-  final List<List<int>>
-      bedMap; // bed type ids per cell: -1 = void bed (no bed), 0 = default bed, >=1 bed type id
+  final List<List<int>> tileMap; // values: 0 = weighted random spawn, -1 = no tile (void/empty), -2 = blocker, >=1 = fixed tile id
+  final List<List<int>> bedMap; // bed type ids per cell: -1 = void bed (no bed), 0 = default bed, >=1 bed type id
   final int moves;
   final bool allowInitialMatches;
   final List<Objective> objectives;
@@ -118,8 +119,13 @@ class StageData {
 
   factory StageData.fromJson(Map<String, dynamic> j) {
     final grid = j['grid'] as Map<String, dynamic>?;
-    final rows = grid != null ? (grid['rows'] as int? ?? 8) : 8;
-    final columns = grid != null ? (grid['columns'] as int? ?? 8) : 8;
+    if (grid == null || grid['rows'] is! int || grid['columns'] is! int) {
+      throw const FormatException(
+        'Stage grid must define integer rows and columns',
+      );
+    }
+    final rows = grid['rows'] as int;
+    final columns = grid['columns'] as int;
 
     final tilesJson = j['tiles'] as List<dynamic>? ?? [];
     final tiles = tilesJson
@@ -136,24 +142,28 @@ class StageData {
         .map((e) => BlockerDef.fromJson(e as Map<String, dynamic>))
         .toList();
 
-    List<List<int>> parseGridArray(dynamic arr, int r, int c) {
-      if (arr == null) return List.generate(r, (_) => List.filled(c, 0));
+    List<List<int>> parseGridArray(dynamic arr) {
+      if (arr == null) {
+        throw const FormatException('Stage maps must be present');
+      }
       final rowsList = (arr as List)
           .map<List<int>>(
-              (row) => (row as List).map<int>((v) => v as int).toList())
+            (row) => (row as List).map<int>((v) => v as int).toList(),
+          )
           .toList();
       return rowsList;
     }
 
     final tileMapCells = (j['tileMap']?['cells']) ?? j['tileMap'];
-    final tileMap = parseGridArray(tileMapCells, rows, columns);
+    final tileMap = parseGridArray(tileMapCells);
 
     final bedMapArr = j['bedMap'];
-    final bedMap = parseGridArray(bedMapArr, rows, columns);
+    final bedMap = parseGridArray(bedMapArr);
 
     final gridRectJson = j['gridRect'] as Map<String, dynamic>?;
-    final gridRect =
-        gridRectJson != null ? GridRect.fromJson(gridRectJson) : null;
+    final gridRect = gridRectJson != null
+        ? GridRect.fromJson(gridRectJson)
+        : null;
 
     final spawnRules = j['spawnRules'] as Map<String, dynamic>?;
     final allowInitialMatches =
@@ -185,39 +195,45 @@ class StageData {
   }
 
   Map<String, dynamic> toJson() => {
-        'stageKey': stageKey,
-        'name': name,
-        'rows': rows,
-        'columns': columns,
-        // gridRect removed - now in gameplay UI JSON
-        'tiles': tiles
-            .map((t) => {
-                  'id': t.id,
-                  'file': t.file,
-                  'weight': t.weight,
-                  if (t.sfxType != null) 'sfxType': t.sfxType,
-                })
-            .toList(),
-        'bedTypes': bedTypes
-            .map((b) => {
-                  'id': b.id,
-                  'file': b.file,
-                  'destructible': b.destructible,
-                  'hp': b.hp
-                })
-            .toList(),
-        'tileMap': tileMap,
-        'bedMap': bedMap,
-        'moves': moves,
-        'spawnRules': {'allowInitialMatches': allowInitialMatches},
-        'objectives': objectives
-            .map((o) => {
-                  'type': o.type,
-                  if (o.tileId != null) 'tileId': o.tileId,
-                  'target': o.target,
-                })
-            .toList(),
-      };
+    'stageKey': stageKey,
+    'name': name,
+    'rows': rows,
+    'columns': columns,
+    // gridRect removed - now in gameplay UI JSON
+    'tiles': tiles
+        .map(
+          (t) => {
+            'id': t.id,
+            'file': t.file,
+            'weight': t.weight,
+            if (t.sfxType != null) 'sfxType': t.sfxType,
+          },
+        )
+        .toList(),
+    'bedTypes': bedTypes
+        .map(
+          (b) => {
+            'id': b.id,
+            'file': b.file,
+            'destructible': b.destructible,
+            'hp': b.hp,
+          },
+        )
+        .toList(),
+    'tileMap': tileMap,
+    'bedMap': bedMap,
+    'moves': moves,
+    'spawnRules': {'allowInitialMatches': allowInitialMatches},
+    'objectives': objectives
+        .map(
+          (o) => {
+            'type': o.type,
+            if (o.tileId != null) 'tileId': o.tileId,
+            'target': o.target,
+          },
+        )
+        .toList(),
+  };
 }
 
 class GridRect {
@@ -226,8 +242,12 @@ class GridRect {
   final double w;
   final double h;
 
-  GridRect(
-      {required this.x, required this.y, required this.w, required this.h});
+  GridRect({
+    required this.x,
+    required this.y,
+    required this.w,
+    required this.h,
+  });
 
   factory GridRect.fromJson(Map<String, dynamic> j) {
     return GridRect(

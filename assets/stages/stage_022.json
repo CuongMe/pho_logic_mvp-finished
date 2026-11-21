@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "stageId": 22,
   "stageKey": "stage_022",
-  "name": "Stage 022 — Gridlock",
-  "difficulty": "medium",
+  "name": "Stage 022 — Scooter Delivery",
+  "difficulty": "easy",
 
   "grid": {
     "rows": 8,
@@ -73,27 +73,26 @@
   ],
 
   "tileMap": {
-    "notes": "0 = spawn random by weights; -1 = void; -2 = scooter_tile_blocker. Checkerboard blockers in center rows.",
+    "notes": "0 = weighted spawn; -1 = void; -2 = scooter blocker. Four blockers introduce the scooter mechanic.",
     "cells": [
       [-1,-1,0,0,0,-1,-1],
       [-1,-1,0,0,0,-1,-1],
-      [0,-2,0,-2,0,-2,0],
-      [0,0,-2,0,-2,0,0],
-      [0,-2,0,-2,0,-2,0],
-      [0,0,-2,0,-2,0,0],
+      [0,-2,0,0,0,-2,0],
+      [0,0,0,0,-2,0,0],
+      [0,0,-2,0,0,0,0],
+      [0,0,0,0,0,0,0],
       [-1,-1,0,0,0,-1,-1],
       [-1,-1,0,0,0,-1,-1]
     ]
   },
 
-  "moves": 25,
+  "moves": 24,
 
   "objectives": [
-    { "type": "collect", "tileId": 2, "target": 20 },
-    { "type": "collect", "tileId": 4, "target": 16 }
+    { "type": "collect", "tileId": 2, "target": 18 }
   ],
 
   "metadata": {
-    "notes": "Stage 022: Gridlock - plus-shaped board with 12 blockers in checkerboard pattern across center rows. Requires strategic clearing to open up play space."
+    "notes": "Stage 022 introduces the scooter blocker with four placements, one collect objective, and 24 moves."
   }
 }

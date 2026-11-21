@@ -18,7 +18,7 @@
     <img src="https://img.shields.io/badge/project-student%20portfolio-F4B942" alt="Student portfolio project" />
     <img src="https://img.shields.io/badge/version-1.0.0%2B6-006B60" alt="Version 1.0.0+6" />
     <img src="https://img.shields.io/badge/levels-25-B3261E" alt="25 stages" />
-    <img src="https://img.shields.io/badge/Dart-%3E%3D3.0%20%3C4.0-0175C2?logo=dart&logoColor=white" alt="Dart SDK range" />
+    <img src="https://img.shields.io/badge/Dart-%3E%3D3.13.0%20%3C4.0-0175C2?logo=dart&logoColor=white" alt="Dart SDK range" />
     <img src="https://img.shields.io/badge/license-GPL--3.0-333333" alt="GPL-3.0 license" />
   </p>
 </div>
@@ -130,7 +130,7 @@ assets/
 
 Prerequisites:
 
-- Flutter SDK with a Dart SDK satisfying `>=3.0.0 <4.0.0`
+- Flutter SDK `>=3.38.4` with Dart SDK `>=3.13.0 <4.0.0`
 - A configured Flutter target such as Android, Chrome, Windows, macOS, Linux, or iOS
 
 ```bash
